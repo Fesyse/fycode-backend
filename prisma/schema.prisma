@@ -39,7 +39,8 @@ model Problem {
 
   likes Int @default(0)
 
-  solution String
+  functionName String
+  solution     String @default("const sum = (array) => array.reduce((a, b) => a + b)")
 }
 
 enum Difficulty {
