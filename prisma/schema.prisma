@@ -14,13 +14,13 @@ datasource db {
 }
 
 model User {
-  id    String @id @default(cuid())
-  email String @unique
+  id       String @id @default(cuid())
+  email    String @unique
+  username String
+  password String
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
-
-  username String
 
   solvedProblems  Problem[] @relation("solved_problems")
   createdProblems Problem[]
