@@ -1,6 +1,7 @@
 import { CHARACTERS, CODE_SECURITY_MATCHES } from "@/constants"
 import type { TestInputTypes } from "@/types"
 import { BadRequestException } from "@nestjs/common"
+import { minify } from "uglify-js"
 
 export const randomNumber = (min: number, max: number) =>
 	Math.floor(Math.random() * (max - min + 1)) + min
@@ -40,4 +41,9 @@ export const codeSecurityCheck = (code: string) => {
 	}
 
 	return true
+}
+
+export const getMinifiedCode = (code: string) => {
+	const result = minify(code)
+	return result.code
 }

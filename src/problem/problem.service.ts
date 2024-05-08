@@ -9,7 +9,7 @@ import type {
 import type { UpdateProblemDto } from "./dto/update-problem.dto"
 import { AttemptProblemDto, AttemptTest } from "./dto/attempt-problem.dto"
 import { SubmitProblemDto } from "./dto/submit-problem.dto"
-import { codeSecurityCheck } from "@/utils"
+import { codeSecurityCheck, getMinifiedCode } from "@/utils"
 
 @Injectable()
 export class ProblemService {
@@ -18,9 +18,11 @@ export class ProblemService {
 	async create(creatorId: string, createProblemDto: CreateProblemDto) {
 		const functionOptions =
 			createProblemDto.functionOptions as unknown as Prisma.JsonObject
+		const solution = getMinifiedCode(createProblemDto.solution)
 		return this.prisma.problem.create({
 			data: {
 				...createProblemDto,
+				solution,
 				functionOptions,
 				creator: { connect: { id: creatorId } }
 			}
@@ -61,7 +63,7 @@ export class ProblemService {
 			problem.functionOptions as unknown as FunctionOptions
 		return testSolution({
 			solution: problem.solution,
-			userSolution: testProblemDto.code,
+			userSolution: getMinifiedCode(testProblemDto.code),
 			attemptTests,
 			functionOptions,
 			handleBadCodeRequest
