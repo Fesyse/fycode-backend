@@ -13,25 +13,50 @@ export interface TestsStatus {
 	declined: number
 }
 
+interface TestOptions {
+	userSolution: string
+	solution: string
+	functionOptions: FunctionOptions
+	attemptTests?: AttemptTest[]
+	handleBadCodeRequest: (message: string) => never
+}
+
 export interface TestsResult {
 	tests: Test[]
 	testsStatus: TestsStatus
 	success: boolean
 }
 
-type TestSolution = (options: {
-	attemptTests?: AttemptTest[]
-	functionOptions: FunctionOptions
-}) => TestsResult
+type TestSolution = (options: TestOptions) => TestsResult
+
+const getSolutionsTest = ({
+	solution,
+	userSolution,
+	handleBadCodeRequest,
+	functionOptions,
+	mockArgs
+}: Omit<TestOptions, "attemptTests"> & { mockArgs: any[] }): Test => {
+	try {
+		const functionCall = `${functionOptions.name}(${mockArgs.join(", ")})`
+		const expected = eval(`${solution}\n\n${functionCall}`)
+		const output = eval(`${userSolution}\n\n${functionCall}`)
+		return {
+			input: mockArgs,
+			expected,
+			output
+		}
+	} catch (e) {
+		handleBadCodeRequest(e.message)
+	}
+}
 
 export const testSolution: TestSolution = ({
 	functionOptions,
-	attemptTests
+	handleBadCodeRequest,
+	attemptTests,
+	userSolution,
+	solution
 }) => {
-	// eslint-disable-next-line @typescript-eslint/no-var-requires
-	const userFunc = require(`./user-solution`)
-	// eslint-disable-next-line @typescript-eslint/no-var-requires
-	const solutionFunc = require(`./solution`)
 	const tests: Test[] = []
 	if (!attemptTests) {
 		for (let i = 0; i < functionOptions.totalChecks; i++) {
@@ -39,19 +64,26 @@ export const testSolution: TestSolution = ({
 			functionOptions.args.map(arg => {
 				mockArgs.push(getRandomArg(arg.type))
 			})
-			tests.push({
-				input: mockArgs,
-				expected: solutionFunc(...mockArgs),
-				output: userFunc(...mockArgs)
+
+			const test = getSolutionsTest({
+				userSolution,
+				solution,
+				handleBadCodeRequest,
+				functionOptions,
+				mockArgs
 			})
+			tests.push(test)
 		}
 	} else {
-		attemptTests.map(test => {
-			tests.push({
-				input: test.input,
-				expected: solutionFunc(...test.input),
-				output: userFunc(...test.input)
+		attemptTests.map(attemptTest => {
+			const test = getSolutionsTest({
+				functionOptions,
+				handleBadCodeRequest,
+				mockArgs: attemptTest.input,
+				solution,
+				userSolution
 			})
+			tests.push(test)
 		})
 	}
 

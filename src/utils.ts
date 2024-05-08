@@ -1,4 +1,4 @@
-import { CHARACTERS } from "@/constants"
+import { CHARACTERS, CODE_SECURITY_MATCHES } from "@/constants"
 import type { TestInputTypes } from "@/types"
 import { BadRequestException } from "@nestjs/common"
 
@@ -31,4 +31,13 @@ export const getRandomArg = (type: TestInputTypes) => {
 
 export const equalsCheck = (a: any, b: any) => {
 	return JSON.stringify(a) === JSON.stringify(b)
+}
+
+export const codeSecurityCheck = (code: string) => {
+	for (let i = 0; i < CODE_SECURITY_MATCHES.length; i++) {
+		const match = CODE_SECURITY_MATCHES[i]
+		if (code.includes(match)) return false
+	}
+
+	return true
 }

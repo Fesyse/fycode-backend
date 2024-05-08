@@ -9,6 +9,7 @@ import type {
 import type { UpdateProblemDto } from "./dto/update-problem.dto"
 import { AttemptProblemDto, AttemptTest } from "./dto/attempt-problem.dto"
 import { SubmitProblemDto } from "./dto/submit-problem.dto"
+import { codeSecurityCheck } from "@/utils"
 
 @Injectable()
 export class ProblemService {
@@ -42,17 +43,28 @@ export class ProblemService {
 		})
 		if (!problem)
 			throw new BadRequestException("Problem with given id was not found")
+		if (!codeSecurityCheck(testProblemDto.code))
+			throw new BadRequestException("Code is not valid")
 
-		// checking if data have .attemptTests, if so assign it to attemptTests value
+		const handleBadCodeRequest = (message: string) => {
+			throw new BadRequestException(message)
+		}
+
+		// checking if data have .tests, if so assign it to attemptTests value
 		let attemptTests: undefined | AttemptTest[] = undefined
-		if (testProblemDto instanceof AttemptProblemDto)
-			attemptTests = testProblemDto.tests
+
+		// eslint-disable-next-line  @typescript-eslint/ban-ts-comment
+		// @ts-expect-error
+		if (testProblemDto.tests) attemptTests = testProblemDto.tests
 
 		const functionOptions =
 			problem.functionOptions as unknown as FunctionOptions
 		return testSolution({
+			solution: problem.solution,
+			userSolution: testProblemDto.code,
 			attemptTests,
-			functionOptions
+			functionOptions,
+			handleBadCodeRequest
 		})
 	}
 }
