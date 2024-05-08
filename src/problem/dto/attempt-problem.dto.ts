@@ -1,11 +1,11 @@
 import { Type } from "class-transformer"
-import { IsArray, IsObject, IsString, ValidateNested } from "class-validator"
+import { IsArray, IsString, ValidateNested } from "class-validator"
 
 export class AttemptProblemDto {
 	@IsString()
 	code: string
 
-	@IsObject()
+	@IsArray()
 	@ValidateNested()
 	@Type(() => AttemptTest)
 	tests: AttemptTest[]

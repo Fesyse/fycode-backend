@@ -15,7 +15,6 @@ import { Auth } from "@/auth/decorators/auth.decorator"
 import { CurrentUser } from "@/auth/decorators/user.decorator"
 import { AttemptProblemDto } from "./dto/attempt-problem.dto"
 import { SubmitProblemDto } from "./dto/submit-problem.dto"
-
 @Controller("problem")
 export class ProblemController {
 	constructor(private readonly problemService: ProblemService) {}
@@ -42,25 +41,23 @@ export class ProblemController {
 		return this.problemService.update(+problemId, updateProblemDto)
 	}
 
-	@Auth()
 	@HttpCode(200)
 	@Post("attempt/:id")
 	@UsePipes(new ValidationPipe())
 	attempt(
 		@Param("id") problemId: string,
-		@Body() testProblemDto: AttemptProblemDto
+		@Body() attemptProblemDto: AttemptProblemDto
 	) {
-		return
+		return this.problemService.test(+problemId, attemptProblemDto)
 	}
 
-	@Auth()
 	@HttpCode(200)
 	@Post("submit/:id")
 	@UsePipes(new ValidationPipe())
 	submit(
 		@Param("id") problemId: string,
-		@Body() testProblemDto: SubmitProblemDto
+		@Body() submitProblemDto: SubmitProblemDto
 	) {
-		return
+		return this.problemService.test(+problemId, submitProblemDto)
 	}
 }

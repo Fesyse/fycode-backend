@@ -15,14 +15,14 @@ import { UserUpdateDto } from "./dto/user-update.dto"
 export class UserController {
 	constructor(private readonly userService: UserService) {}
 
-	@UsePipes(new ValidationPipe())
-	@Put()
-	@HttpCode(200)
 	@Auth()
+	@Put("update")
+	@HttpCode(200)
+	@UsePipes(new ValidationPipe())
 	async updateProfile(
 		@CurrentUser("id") id: string,
-		@Body() dto: UserUpdateDto
+		@Body() updateUserDto: UserUpdateDto
 	) {
-		return this.userService.update(id, dto)
+		return this.userService.update(id, updateUserDto)
 	}
 }
