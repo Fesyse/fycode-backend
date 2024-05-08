@@ -93,8 +93,10 @@ export class AuthService {
 		const tokens = this.issueTokens(user.id)
 
 		return {
-			user,
-			password: undefined,
+			user: {
+				...user,
+				password: undefined
+			},
 			...tokens
 		}
 	}

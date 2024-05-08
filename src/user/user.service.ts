@@ -29,8 +29,9 @@ export class UserService {
 	}
 
 	async update(id: string, dto: UserUpdateDto) {
-		const data = {
-			...dto,
+		const data: UserUpdateDto = {
+			username: dto.username,
+			email: dto.email,
 			password: dto.password ? await hash(dto.password) : undefined
 		}
 
