@@ -7,11 +7,11 @@ export class AttemptProblemDto {
 
 	@IsArray()
 	@ValidateNested()
-	@Type(() => AttemptTest)
-	tests: AttemptTest[]
+	@Type(() => CustomTest)
+	tests: CustomTest[]
 }
 
-export class AttemptTest {
+export class CustomTest {
 	@IsArray()
 	input: any[]
 }

@@ -4,7 +4,7 @@ import {
 	FunctionOptions,
 	TestsOptions
 } from "./dto/create-problem.dto"
-import type { AttemptTest } from "./dto/attempt-problem.dto"
+import type { CustomTest } from "./dto/attempt-problem.dto"
 
 export interface Test {
 	input: FunctionArg[]
@@ -22,7 +22,7 @@ interface TestArguments {
 	solution: string
 	testsOptions: TestsOptions
 	functionOptions: FunctionOptions
-	attemptTests?: AttemptTest[]
+	customTests?: CustomTest[]
 	handleBadCodeRequest: (message: string) => never
 }
 
@@ -40,7 +40,7 @@ const getSolutionsTest = ({
 	handleBadCodeRequest,
 	functionOptions,
 	mockArgs
-}: Omit<TestArguments, "attemptTests" | "testsOptions"> & {
+}: Omit<TestArguments, "customTests" | "testsOptions"> & {
 	mockArgs: any[]
 }): Test => {
 	try {
@@ -64,12 +64,12 @@ export const testSolution: TestSolution = ({
 	testsOptions,
 	functionOptions,
 	handleBadCodeRequest,
-	attemptTests,
+	customTests,
 	userSolution,
 	solution
 }) => {
 	const tests: Test[] = []
-	if (!attemptTests) {
+	if (!customTests) {
 		for (let i = 0; i < testsOptions.totalChecks; i++) {
 			const mockArgs = []
 			functionOptions.args.map(arg => {
@@ -86,11 +86,11 @@ export const testSolution: TestSolution = ({
 			tests.push(test)
 		}
 	} else {
-		attemptTests.map(attemptTest => {
+		customTests.map(customTest => {
 			const test = getSolutionsTest({
 				functionOptions,
 				handleBadCodeRequest,
-				mockArgs: attemptTest.input,
+				mockArgs: customTest.input,
 				solution,
 				userSolution
 			})

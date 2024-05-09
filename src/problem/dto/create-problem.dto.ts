@@ -11,7 +11,7 @@ import {
 import { Difficulty } from "@prisma/client"
 import { Type } from "class-transformer"
 import { TestInputTypes } from "@/types"
-import { AttemptTest } from "./attempt-problem.dto"
+import { CustomTest } from "./attempt-problem.dto"
 
 export class TestsOptions {
 	@IsBoolean()
@@ -20,8 +20,8 @@ export class TestsOptions {
 	@IsOptional()
 	@IsArray()
 	@ValidateNested()
-	@Type(() => AttemptTest)
-	tests?: AttemptTest[]
+	@Type(() => CustomTest)
+	tests?: CustomTest[]
 
 	@IsOptional()
 	@IsNumber()

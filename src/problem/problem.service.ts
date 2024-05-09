@@ -1,6 +1,6 @@
-import { BadRequestException, Injectable } from "@nestjs/common"
+import { BadRequestException, Injectable, Logger } from "@nestjs/common"
 import { PrismaService } from "@/prisma.service"
-import { testSolution, type TestsResult } from "./user-solution.spec"
+import { testSolution, type TestsResult } from "./user-solution.test"
 import { Prisma } from "@prisma/client"
 import type {
 	CreateProblemDto,
@@ -8,7 +8,7 @@ import type {
 	TestsOptions
 } from "./dto/create-problem.dto"
 import type { UpdateProblemDto } from "./dto/update-problem.dto"
-import { AttemptProblemDto, AttemptTest } from "./dto/attempt-problem.dto"
+import { AttemptProblemDto, CustomTest } from "./dto/attempt-problem.dto"
 import { SubmitProblemDto } from "./dto/submit-problem.dto"
 import { codeSecurityCheck } from "@/utils"
 
@@ -23,6 +23,7 @@ export class ProblemService {
 			createProblemDto.functionOptions as unknown as Prisma.JsonObject
 		try {
 			eval(createProblemDto.solution)
+			Logger.log(true)
 		} catch (e) {
 			throw new BadRequestException(e)
 		}
@@ -71,15 +72,15 @@ export class ProblemService {
 			throw new BadRequestException(message)
 		}
 
-		// checking if data have .tests, if so assign it to attemptTests value
-		let attemptTests: undefined | AttemptTest[] = undefined
+		// checking if data have .tests, if so assign it to customTests value
+		let customTests: undefined | CustomTest[] = undefined
 
 		// eslint-disable-next-line  @typescript-eslint/ban-ts-comment
 		// @ts-expect-error
-		if (testProblemDto.tests) attemptTests = testProblemDto.tests
+		if (testProblemDto.tests) customTests = testProblemDto.tests
 		else {
 			const testsOptions = problem.testsOptions as unknown as TestsOptions
-			if (testsOptions.useCustomTests) attemptTests = testsOptions.tests
+			if (testsOptions.useCustomTests) customTests = testsOptions.tests
 		}
 
 		const testsOptions = problem.testsOptions as unknown as TestsOptions
@@ -89,7 +90,7 @@ export class ProblemService {
 			solution: problem.solution,
 			userSolution: testProblemDto.code,
 			testsOptions,
-			attemptTests,
+			customTests,
 			functionOptions,
 			handleBadCodeRequest
 		})
