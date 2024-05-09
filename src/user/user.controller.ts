@@ -3,7 +3,6 @@ import {
 	Controller,
 	Get,
 	HttpCode,
-	Logger,
 	Put,
 	UsePipes,
 	ValidationPipe
