@@ -39,7 +39,9 @@ model Problem {
 
   likes Int @default(0)
 
-  solution String
+  testsOptions    Json
+  functionOptions Json
+  solution        String
 }
 
 enum Difficulty {

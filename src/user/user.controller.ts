@@ -1,6 +1,7 @@
 import {
 	Body,
 	Controller,
+	Get,
 	HttpCode,
 	Put,
 	UsePipes,
@@ -15,14 +16,24 @@ import { UserUpdateDto } from "./dto/user-update.dto"
 export class UserController {
 	constructor(private readonly userService: UserService) {}
 
-	@UsePipes(new ValidationPipe())
-	@Put()
-	@HttpCode(200)
 	@Auth()
-	async updateProfile(
+	@Put("update")
+	@HttpCode(200)
+	@UsePipes(new ValidationPipe())
+	async update(
 		@CurrentUser("id") id: string,
-		@Body() dto: UserUpdateDto
+		@Body() updateUserDto: UserUpdateDto
 	) {
-		return this.userService.update(id, dto)
+		return this.userService.update(id, updateUserDto)
+	}
+
+	@Auth()
+	@HttpCode(200)
+	@Get("profile")
+	async getProfile(@CurrentUser("id") id: string) {
+		return this.userService.getById(id, false, {
+			createdProblems: true,
+			solvedProblems: true
+		})
 	}
 }
