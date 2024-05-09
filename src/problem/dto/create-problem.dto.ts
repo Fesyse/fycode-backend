@@ -4,23 +4,28 @@ import {
 	IsString,
 	ValidateNested,
 	IsArray,
-	IsNumber
+	IsNumber,
+	IsOptional,
+	IsBoolean
 } from "class-validator"
 import { Difficulty } from "@prisma/client"
 import { Type } from "class-transformer"
 import { TestInputTypes } from "@/types"
+import { AttemptTest } from "./attempt-problem.dto"
 
-export class FunctionOptions {
-	@IsString()
-	name: string
+export class TestsOptions {
+	@IsBoolean()
+	useCustomTests: boolean
 
+	@IsOptional()
 	@IsArray()
-	@ValidateNested({ each: true })
-	@Type(() => FunctionArg)
-	args: FunctionArg[]
+	@ValidateNested()
+	@Type(() => AttemptTest)
+	tests?: AttemptTest[]
 
+	@IsOptional()
 	@IsNumber()
-	totalChecks: number
+	totalChecks?: number
 }
 
 export class FunctionArg {
@@ -32,6 +37,16 @@ export class FunctionArg {
 	type: TestInputTypes
 }
 
+export class FunctionOptions {
+	@IsString()
+	name: string
+
+	@IsArray()
+	@ValidateNested({ each: true })
+	@Type(() => FunctionArg)
+	args: FunctionArg[]
+}
+
 export class CreateProblemDto {
 	@IsString()
 	title: string
@@ -41,6 +56,11 @@ export class CreateProblemDto {
 
 	@IsEnum(Difficulty)
 	difficulty: Difficulty
+
+	@IsObject()
+	@ValidateNested()
+	@Type(() => TestsOptions)
+	testsOptions: TestsOptions
 
 	@IsObject()
 	@ValidateNested()

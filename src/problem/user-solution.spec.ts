@@ -1,5 +1,9 @@
 import { equalsCheck, getRandomArg } from "@/utils"
-import { FunctionArg, FunctionOptions } from "./dto/create-problem.dto"
+import {
+	FunctionArg,
+	FunctionOptions,
+	TestsOptions
+} from "./dto/create-problem.dto"
 import type { AttemptTest } from "./dto/attempt-problem.dto"
 
 export interface Test {
@@ -13,9 +17,10 @@ export interface TestsStatus {
 	declined: number
 }
 
-interface TestOptions {
+interface TestArguments {
 	userSolution: string
 	solution: string
+	testsOptions: TestsOptions
 	functionOptions: FunctionOptions
 	attemptTests?: AttemptTest[]
 	handleBadCodeRequest: (message: string) => never
@@ -27,7 +32,7 @@ export interface TestsResult {
 	success: boolean
 }
 
-type TestSolution = (options: TestOptions) => TestsResult
+type TestSolution = (options: TestArguments) => TestsResult
 
 const getSolutionsTest = ({
 	solution,
@@ -35,11 +40,16 @@ const getSolutionsTest = ({
 	handleBadCodeRequest,
 	functionOptions,
 	mockArgs
-}: Omit<TestOptions, "attemptTests"> & { mockArgs: any[] }): Test => {
+}: Omit<TestArguments, "attemptTests" | "testsOptions"> & {
+	mockArgs: any[]
+}): Test => {
 	try {
-		const functionCall = `${functionOptions.name}(${mockArgs.join(", ")})`
+		const argsAsString = JSON.stringify(mockArgs)
+		const functionCall = `${functionOptions.name}(${argsAsString.substring(1, argsAsString.length - 1)})`
+
 		const expected = eval(`${solution}\n\n${functionCall}`)
 		const output = eval(`${userSolution}\n\n${functionCall}`)
+
 		return {
 			input: mockArgs,
 			expected,
@@ -51,6 +61,7 @@ const getSolutionsTest = ({
 }
 
 export const testSolution: TestSolution = ({
+	testsOptions,
 	functionOptions,
 	handleBadCodeRequest,
 	attemptTests,
@@ -59,7 +70,7 @@ export const testSolution: TestSolution = ({
 }) => {
 	const tests: Test[] = []
 	if (!attemptTests) {
-		for (let i = 0; i < functionOptions.totalChecks; i++) {
+		for (let i = 0; i < testsOptions.totalChecks; i++) {
 			const mockArgs = []
 			functionOptions.args.map(arg => {
 				mockArgs.push(getRandomArg(arg.type))

@@ -1,7 +1,6 @@
 import { CHARACTERS, CODE_SECURITY_MATCHES } from "@/constants"
 import type { TestInputTypes } from "@/types"
 import { BadRequestException } from "@nestjs/common"
-import { minify } from "uglify-js"
 
 export const randomNumber = (min: number, max: number) =>
 	Math.floor(Math.random() * (max - min + 1)) + min
@@ -22,9 +21,17 @@ export const getRandomArg = (type: TestInputTypes) => {
 		case "string":
 			return randomString(randomNumber(5, 40))
 		case "number-array":
-			return new Array<number>(0).map(() => randomNumber(0, 1000))
+			const numArr = new Array<number>(randomNumber(1, 15))
+			for (let i = 0; i < numArr.length; i++) {
+				numArr[i] = randomNumber(0, 1000)
+			}
+			return numArr
 		case "string-array":
-			return new Array<string>(0).map(() => randomString(randomNumber(5, 40)))
+			const strArr = new Array<string>(randomNumber(1, 15))
+			for (let i = 0; i < strArr.length; i++) {
+				strArr[i] = randomString(randomNumber(5, 40))
+			}
+			return strArr
 		default:
 			throw new BadRequestException("Invalid type: " + type)
 	}
@@ -41,9 +48,4 @@ export const codeSecurityCheck = (code: string) => {
 	}
 
 	return true
-}
-
-export const getMinifiedCode = (code: string) => {
-	const result = minify(code)
-	return result.code
 }

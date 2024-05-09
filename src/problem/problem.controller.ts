@@ -41,6 +41,7 @@ export class ProblemController {
 		return this.problemService.update(+problemId, updateProblemDto)
 	}
 
+	@Auth()
 	@HttpCode(200)
 	@Post("attempt/:id")
 	@UsePipes(new ValidationPipe())
@@ -51,6 +52,7 @@ export class ProblemController {
 		return this.problemService.test(+problemId, attemptProblemDto)
 	}
 
+	@Auth()
 	@HttpCode(200)
 	@Post("submit/:id")
 	@UsePipes(new ValidationPipe())

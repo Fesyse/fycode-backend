@@ -39,6 +39,7 @@ model Problem {
 
   likes Int @default(0)
 
+  testsOptions    Json
   functionOptions Json
   solution        String
 }

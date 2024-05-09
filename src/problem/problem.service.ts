@@ -4,25 +4,32 @@ import { testSolution, type TestsResult } from "./user-solution.spec"
 import { Prisma } from "@prisma/client"
 import type {
 	CreateProblemDto,
-	FunctionOptions
+	FunctionOptions,
+	TestsOptions
 } from "./dto/create-problem.dto"
 import type { UpdateProblemDto } from "./dto/update-problem.dto"
 import { AttemptProblemDto, AttemptTest } from "./dto/attempt-problem.dto"
 import { SubmitProblemDto } from "./dto/submit-problem.dto"
-import { codeSecurityCheck, getMinifiedCode } from "@/utils"
+import { codeSecurityCheck } from "@/utils"
 
 @Injectable()
 export class ProblemService {
 	constructor(private prisma: PrismaService) {}
 
 	async create(creatorId: string, createProblemDto: CreateProblemDto) {
+		const testsOptions =
+			createProblemDto.testsOptions as unknown as Prisma.JsonObject
 		const functionOptions =
 			createProblemDto.functionOptions as unknown as Prisma.JsonObject
-		const solution = getMinifiedCode(createProblemDto.solution)
+		try {
+			eval(createProblemDto.solution)
+		} catch (e) {
+			throw new BadRequestException(e)
+		}
 		return this.prisma.problem.create({
 			data: {
 				...createProblemDto,
-				solution,
+				testsOptions,
 				functionOptions,
 				creator: { connect: { id: creatorId } }
 			}
@@ -30,8 +37,20 @@ export class ProblemService {
 	}
 
 	async update(problemId: number, updateProblemDto: UpdateProblemDto) {
+		const functionOptions =
+			updateProblemDto.functionOptions as unknown as Prisma.JsonObject
+		if (updateProblemDto.solution) {
+			try {
+				eval(updateProblemDto.solution)
+			} catch (e) {
+				throw new BadRequestException(e)
+			}
+		}
 		return this.prisma.problem.update({
-			data: updateProblemDto,
+			data: {
+				...updateProblemDto,
+				functionOptions
+			},
 			where: { id: problemId }
 		})
 	}
@@ -58,12 +77,18 @@ export class ProblemService {
 		// eslint-disable-next-line  @typescript-eslint/ban-ts-comment
 		// @ts-expect-error
 		if (testProblemDto.tests) attemptTests = testProblemDto.tests
+		else {
+			const testsOptions = problem.testsOptions as unknown as TestsOptions
+			if (testsOptions.useCustomTests) attemptTests = testsOptions.tests
+		}
 
+		const testsOptions = problem.testsOptions as unknown as TestsOptions
 		const functionOptions =
 			problem.functionOptions as unknown as FunctionOptions
 		return testSolution({
 			solution: problem.solution,
-			userSolution: getMinifiedCode(testProblemDto.code),
+			userSolution: testProblemDto.code,
+			testsOptions,
 			attemptTests,
 			functionOptions,
 			handleBadCodeRequest
