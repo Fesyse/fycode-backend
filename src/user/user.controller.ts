@@ -1,7 +1,9 @@
 import {
 	Body,
 	Controller,
+	Get,
 	HttpCode,
+	Logger,
 	Put,
 	UsePipes,
 	ValidationPipe
@@ -19,10 +21,20 @@ export class UserController {
 	@Put("update")
 	@HttpCode(200)
 	@UsePipes(new ValidationPipe())
-	async updateProfile(
+	async update(
 		@CurrentUser("id") id: string,
 		@Body() updateUserDto: UserUpdateDto
 	) {
 		return this.userService.update(id, updateUserDto)
+	}
+
+	@Auth()
+	@HttpCode(200)
+	@Get("profile")
+	async getProfile(@CurrentUser("id") id: string) {
+		return this.userService.getById(id, false, {
+			createdProblems: true,
+			solvedProblems: true
+		})
 	}
 }

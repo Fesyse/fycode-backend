@@ -8,10 +8,19 @@ import { UserUpdateDto } from "./dto/user-update.dto"
 export class UserService {
 	constructor(private prisma: PrismaService) {}
 
-	async getById(id: string) {
-		return this.prisma.user.findUnique({
-			where: { id }
+	async getById(
+		id: string,
+		includePassword: boolean = true,
+		include?: { createdProblems?: boolean; solvedProblems?: boolean }
+	) {
+		const user = await this.prisma.user.findUnique({
+			where: { id },
+			include: {
+				createdProblems: include?.createdProblems,
+				solvedProblems: include?.solvedProblems
+			}
 		})
+		return { ...user, password: includePassword ? user.password : undefined }
 	}
 
 	async getByEmail(email: string) {
@@ -35,9 +44,10 @@ export class UserService {
 			password: dto.password ? await hash(dto.password) : undefined
 		}
 
-		return this.prisma.user.update({
+		const user = await this.prisma.user.update({
 			where: { id },
 			data
 		})
+		return { ...user, password: undefined }
 	}
 }
