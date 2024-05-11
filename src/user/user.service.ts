@@ -13,11 +13,21 @@ export class UserService {
 		includePassword: boolean = true,
 		include?: { createdProblems?: boolean; solvedProblems?: boolean }
 	) {
+		const selectFieldsProblem = {
+			id: true,
+			title: true,
+			description: true,
+			difficulty: true
+		}
 		const user = await this.prisma.user.findUnique({
 			where: { id },
 			include: {
-				createdProblems: include?.createdProblems,
+				createdProblems: include?.createdProblems
+					? { select: selectFieldsProblem }
+					: false,
 				solvedProblems: include?.solvedProblems
+					? { select: selectFieldsProblem }
+					: false
 			}
 		})
 		return { ...user, password: includePassword ? user.password : undefined }

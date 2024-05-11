@@ -1,7 +1,6 @@
 import {
 	Body,
 	Controller,
-	HttpCode,
 	Post,
 	Req,
 	Res,
@@ -19,7 +18,6 @@ export class AuthController {
 	constructor(private readonly authService: AuthService) {}
 
 	@UsePipes(new ValidationPipe())
-	@HttpCode(200)
 	@Post("login")
 	async login(
 		@Body() dto: AuthLoginDto,
@@ -32,7 +30,6 @@ export class AuthController {
 	}
 
 	@UsePipes(new ValidationPipe())
-	@HttpCode(200)
 	@Post("register")
 	async register(
 		@Body() dto: AuthRegisterDto,
@@ -44,7 +41,6 @@ export class AuthController {
 		return response
 	}
 
-	@HttpCode(200)
 	@Post("logout")
 	async logout(@Res({ passthrough: true }) res: Response) {
 		this.authService.removeRefreshTokenToResponse(res)
@@ -52,7 +48,6 @@ export class AuthController {
 		return true
 	}
 
-	@HttpCode(200)
 	@Post("login/access-token")
 	async getNewTokens(
 		@Req() req: Request,

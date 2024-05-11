@@ -2,7 +2,6 @@ import {
 	Body,
 	Controller,
 	Get,
-	HttpCode,
 	Put,
 	UsePipes,
 	ValidationPipe
@@ -18,7 +17,6 @@ export class UserController {
 
 	@Auth()
 	@Put("update")
-	@HttpCode(200)
 	@UsePipes(new ValidationPipe())
 	async update(
 		@CurrentUser("id") id: string,
@@ -28,7 +26,6 @@ export class UserController {
 	}
 
 	@Auth()
-	@HttpCode(200)
 	@Get("profile")
 	async getProfile(@CurrentUser("id") id: string) {
 		return this.userService.getById(id, false, {
