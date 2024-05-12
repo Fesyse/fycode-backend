@@ -22,6 +22,12 @@ export class ProblemController {
 	constructor(private readonly problemService: ProblemService) {}
 
 	@Auth()
+	@Get("get/:id")
+	get(@Param("id") problemId: string) {
+		return this.problemService.getById(+problemId)
+	}
+
+	@Auth()
 	@Get("get/some")
 	@UsePipes(new ValidationPipe())
 	getSome(@Body() getSomeProblemsDto: GetSomeProblemsDto) {

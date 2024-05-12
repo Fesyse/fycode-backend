@@ -9,12 +9,36 @@ import {
 	ValidateNested
 } from "class-validator"
 
-export class Pagination {
+enum Order {
+	ASC = "asc",
+	DESC = "desc"
+}
+
+class Pagination {
 	@IsNumber()
 	page: number
 
 	@IsNumber()
 	pageSize: number
+}
+
+class Filters {
+	@IsOptional()
+	@IsString()
+	@IsEnum(Difficulty)
+	difficulty?: Difficulty
+}
+
+class OrderBy {
+	@IsOptional()
+	@IsString()
+	@IsEnum(Order)
+	id?: Order
+
+	@IsOptional()
+	@IsString()
+	@IsEnum(Order)
+	likes?: Order
 }
 
 export class GetSomeProblemsDto {
@@ -23,8 +47,15 @@ export class GetSomeProblemsDto {
 	@Type(() => Pagination)
 	pagination: Pagination
 
-	@IsString()
 	@IsOptional()
-	@IsEnum(Difficulty)
-	difficulty?: Difficulty
+	@IsObject()
+	@ValidateNested()
+	@Type(() => Filters)
+	filters?: Filters
+
+	@IsOptional()
+	@IsObject()
+	@ValidateNested()
+	@Type(() => OrderBy)
+	orderBy?: OrderBy
 }

@@ -17,9 +17,31 @@ import { GetSomeProblemsDto } from "./dto/get-some-problem.dto"
 export class ProblemService {
 	constructor(private prisma: PrismaService) {}
 
-	async getSome({ pagination, difficulty }: GetSomeProblemsDto) {
+	async getById(problemId: number) {
+		try {
+			return await this.prisma.problem.findUnique({
+				where: { id: problemId },
+				select: {
+					id: true,
+					title: true,
+					description: true,
+					difficulty: true,
+					likes: true,
+					creator: {
+						select: {
+							username: true
+						}
+					}
+				}
+			})
+		} catch {
+			throw new BadRequestException("Problem with given id was not found")
+		}
+	}
+
+	async getSome({ pagination, filters, orderBy }: GetSomeProblemsDto) {
 		return this.prisma.problem.findMany({
-			where: { difficulty },
+			where: filters,
 			select: {
 				id: true,
 				title: true,
@@ -29,7 +51,7 @@ export class ProblemService {
 			},
 			skip: pagination.page * pagination.pageSize,
 			take: pagination.pageSize,
-			orderBy: { id: "asc" }
+			orderBy: orderBy ?? { id: "asc" }
 		})
 	}
 
