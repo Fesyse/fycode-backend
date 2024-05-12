@@ -1,6 +1,6 @@
-import { BadRequestException, Injectable, Logger } from "@nestjs/common"
+import { BadRequestException, Injectable } from "@nestjs/common"
 import { PrismaService } from "@/prisma.service"
-import { testSolution, type TestsResult } from "./user-solution.test"
+import { testSolution } from "./user-solution.test"
 import { Prisma } from "@prisma/client"
 import type {
 	CreateProblemDto,
@@ -11,10 +11,49 @@ import type { UpdateProblemDto } from "./dto/update-problem.dto"
 import { AttemptProblemDto, CustomTest } from "./dto/attempt-problem.dto"
 import { SubmitProblemDto } from "./dto/submit-problem.dto"
 import { codeSecurityCheck } from "@/utils"
+import { GetSomeProblemsDto } from "./dto/get-some-problem.dto"
 
 @Injectable()
 export class ProblemService {
 	constructor(private prisma: PrismaService) {}
+
+	async getById(problemId: number) {
+		try {
+			return await this.prisma.problem.findUnique({
+				where: { id: problemId },
+				select: {
+					id: true,
+					title: true,
+					description: true,
+					difficulty: true,
+					likes: true,
+					creator: {
+						select: {
+							username: true
+						}
+					}
+				}
+			})
+		} catch {
+			throw new BadRequestException("Problem with given id was not found")
+		}
+	}
+
+	async getSome({ pagination, filters, orderBy }: GetSomeProblemsDto) {
+		return this.prisma.problem.findMany({
+			where: filters,
+			select: {
+				id: true,
+				title: true,
+				description: true,
+				difficulty: true,
+				likes: true
+			},
+			skip: pagination.page * pagination.pageSize,
+			take: pagination.pageSize,
+			orderBy: orderBy ?? { id: "asc" }
+		})
+	}
 
 	async create(creatorId: string, createProblemDto: CreateProblemDto) {
 		const testsOptions =
@@ -23,11 +62,10 @@ export class ProblemService {
 			createProblemDto.functionOptions as unknown as Prisma.JsonObject
 		try {
 			eval(createProblemDto.solution)
-			Logger.log(true)
 		} catch (e) {
 			throw new BadRequestException(e)
 		}
-		return this.prisma.problem.create({
+		const problem = await this.prisma.problem.create({
 			data: {
 				...createProblemDto,
 				testsOptions,
@@ -35,6 +73,27 @@ export class ProblemService {
 				creator: { connect: { id: creatorId } }
 			}
 		})
+		await this.prisma.user.update({
+			where: { id: creatorId },
+			data: {
+				solvedProblems: {
+					connect: { id: problem.id }
+				}
+			}
+		})
+		return problem
+	}
+
+	async delete(problemId: number, userId: string) {
+		try {
+			return await this.prisma.problem.delete({
+				where: { id: problemId, creatorId: userId }
+			})
+		} catch {
+			throw new BadRequestException(
+				"Either you are not allowed to delete this problem, or problem id is not valid"
+			)
+		}
 	}
 
 	async update(problemId: number, updateProblemDto: UpdateProblemDto) {
@@ -47,37 +106,56 @@ export class ProblemService {
 				throw new BadRequestException(e)
 			}
 		}
-		return this.prisma.problem.update({
+		try {
+			return await this.prisma.problem.update({
+				data: {
+					...updateProblemDto,
+					functionOptions
+				},
+				where: { id: problemId }
+			})
+		} catch {
+			throw new BadRequestException(
+				"Problem with given id was not found, or else.."
+			)
+		}
+	}
+
+	async updateUserSolvedProblems(problemId: number, userId: string) {
+		return this.prisma.user.update({
+			where: { id: userId },
 			data: {
-				...updateProblemDto,
-				functionOptions
-			},
-			where: { id: problemId }
+				solvedProblems: {
+					connect: { id: problemId }
+				}
+			}
 		})
 	}
 
-	async test(
-		problemId: number,
-		testProblemDto?: AttemptProblemDto | SubmitProblemDto
-	): Promise<TestsResult> {
+	async test(options: {
+		problemId: number
+		userId: string
+		testProblemDto: AttemptProblemDto | SubmitProblemDto
+	}) {
 		const problem = await this.prisma.problem.findUnique({
-			where: { id: problemId }
+			where: { id: options.problemId }
 		})
+		const code = options.testProblemDto.code.replaceAll("\\n", "\n")
+
 		if (!problem)
 			throw new BadRequestException("Problem with given id was not found")
-		if (!codeSecurityCheck(testProblemDto.code))
+		if (!codeSecurityCheck(code))
 			throw new BadRequestException("Code is not valid")
 
 		const handleBadCodeRequest = (message: string) => {
 			throw new BadRequestException(message)
 		}
 
-		// checking if data have .tests, if so assign it to customTests value
 		let customTests: undefined | CustomTest[] = undefined
 
-		// eslint-disable-next-line  @typescript-eslint/ban-ts-comment
-		// @ts-expect-error
-		if (testProblemDto.tests) customTests = testProblemDto.tests
+		// @ts-expect-error checking if testProblemDto is typeof AttemptProblemDto
+		// checking if data have .tests, if so assign it to customTests value
+		if (options.testProblemDto.tests) customTests = options.testProblemDto.tests
 		else {
 			const testsOptions = problem.testsOptions as unknown as TestsOptions
 			if (testsOptions.useCustomTests) customTests = testsOptions.tests
@@ -88,7 +166,7 @@ export class ProblemService {
 			problem.functionOptions as unknown as FunctionOptions
 		return testSolution({
 			solution: problem.solution,
-			userSolution: testProblemDto.code,
+			userSolution: code,
 			testsOptions,
 			customTests,
 			functionOptions,

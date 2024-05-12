@@ -6,7 +6,8 @@ import {
 	Param,
 	UsePipes,
 	ValidationPipe,
-	HttpCode
+	Delete,
+	Get
 } from "@nestjs/common"
 import { ProblemService } from "./problem.service"
 import { CreateProblemDto } from "./dto/create-problem.dto"
@@ -15,12 +16,25 @@ import { Auth } from "@/auth/decorators/auth.decorator"
 import { CurrentUser } from "@/auth/decorators/user.decorator"
 import { AttemptProblemDto } from "./dto/attempt-problem.dto"
 import { SubmitProblemDto } from "./dto/submit-problem.dto"
+import { GetSomeProblemsDto } from "./dto/get-some-problem.dto"
 @Controller("problem")
 export class ProblemController {
 	constructor(private readonly problemService: ProblemService) {}
 
 	@Auth()
-	@HttpCode(200)
+	@Get("get/:id")
+	get(@Param("id") problemId: string) {
+		return this.problemService.getById(+problemId)
+	}
+
+	@Auth()
+	@Get("get/some")
+	@UsePipes(new ValidationPipe())
+	getSome(@Body() getSomeProblemsDto: GetSomeProblemsDto) {
+		return this.problemService.getSome(getSomeProblemsDto)
+	}
+
+	@Auth()
 	@Post("create")
 	@UsePipes(new ValidationPipe())
 	create(
@@ -31,7 +45,6 @@ export class ProblemController {
 	}
 
 	@Auth()
-	@HttpCode(200)
 	@Patch("update/:id")
 	@UsePipes(new ValidationPipe())
 	update(
@@ -42,24 +55,41 @@ export class ProblemController {
 	}
 
 	@Auth()
-	@HttpCode(200)
+	@Delete("delete/:id")
+	delete(@Param("id") problemId: string, @CurrentUser("id") userId: string) {
+		return this.problemService.delete(+problemId, userId)
+	}
+
+	@Auth()
 	@Post("attempt/:id")
 	@UsePipes(new ValidationPipe())
 	attempt(
 		@Param("id") problemId: string,
+		@CurrentUser("id") userId: string,
 		@Body() attemptProblemDto: AttemptProblemDto
 	) {
-		return this.problemService.test(+problemId, attemptProblemDto)
+		return this.problemService.test({
+			problemId: +problemId,
+			userId,
+			testProblemDto: attemptProblemDto
+		})
 	}
 
 	@Auth()
-	@HttpCode(200)
 	@Post("submit/:id")
 	@UsePipes(new ValidationPipe())
-	submit(
+	async submit(
 		@Param("id") problemId: string,
+		@CurrentUser("id") userId: string,
 		@Body() submitProblemDto: SubmitProblemDto
 	) {
-		return this.problemService.test(+problemId, submitProblemDto)
+		const testsResult = await this.problemService.test({
+			problemId: +problemId,
+			userId,
+			testProblemDto: submitProblemDto
+		})
+		if (testsResult.success)
+			await this.problemService.updateUserSolvedProblems(+problemId, userId)
+		return testsResult
 	}
 }
