@@ -16,32 +16,47 @@ import { GetSomeProblemsDto } from "./dto/get-some-problem.dto"
 @Injectable()
 export class ProblemService {
 	constructor(private prisma: PrismaService) {}
+	private PROBLE_GET_FIELDS_SELECT = {
+		id: true,
+		title: true,
+		description: true,
+		difficulty: true,
+		likes: true,
+		creator: {
+			select: {
+				id: true,
+				avatar: true,
+				username: true
+			}
+		}
+	}
 
 	async getById(problemId: number) {
 		try {
 			return await this.prisma.problem.findUnique({
 				where: { id: problemId },
-				select: {
-					id: true,
-					title: true,
-					description: true,
-					difficulty: true,
-					likes: true,
-					creator: {
-						select: {
-							username: true
-						}
-					}
-				}
+				select: this.PROBLE_GET_FIELDS_SELECT
 			})
 		} catch {
 			throw new BadRequestException("Problem with given id was not found")
 		}
 	}
 
+	async getPopular() {
+		return this.prisma.problem.findFirst({
+			select: this.PROBLE_GET_FIELDS_SELECT,
+			orderBy: {
+				likes: "desc"
+			}
+		})
+	}
+
 	async getSome({ pagination, filters, orderBy }: GetSomeProblemsDto) {
 		return this.prisma.problem.findMany({
-			where: filters,
+			where: {
+				...filters,
+				title: filters?.title ? { contains: filters.title } : undefined
+			},
 			select: {
 				id: true,
 				title: true,
@@ -53,6 +68,11 @@ export class ProblemService {
 			take: pagination.pageSize,
 			orderBy: orderBy ?? { id: "asc" }
 		})
+	}
+
+	async getMaxPage({ filters, pagination }: GetSomeProblemsDto) {
+		const pageCount = await this.prisma.problem.count({ where: filters })
+		return Math.floor(pageCount / pagination.pageSize)
 	}
 
 	async create(creatorId: string, createProblemDto: CreateProblemDto) {
@@ -134,7 +154,6 @@ export class ProblemService {
 
 	async test(options: {
 		problemId: number
-		userId: string
 		testProblemDto: AttemptProblemDto | SubmitProblemDto
 	}) {
 		const problem = await this.prisma.problem.findUnique({

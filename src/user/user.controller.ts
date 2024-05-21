@@ -1,6 +1,7 @@
 import {
 	Body,
 	Controller,
+	Delete,
 	Get,
 	Put,
 	UsePipes,
@@ -26,11 +27,23 @@ export class UserController {
 	}
 
 	@Auth()
+	@Get()
+	async get(@CurrentUser("id") id: string) {
+		return this.userService.getById(id, false)
+	}
+
+	@Auth()
 	@Get("profile")
 	async getProfile(@CurrentUser("id") id: string) {
 		return this.userService.getById(id, false, {
 			createdProblems: true,
 			solvedProblems: true
 		})
+	}
+
+	@Auth()
+	@Delete("remove-avatar")
+	async removeUserAvatar(@CurrentUser("id") userId: string) {
+		return this.userService.deleteUserAvatar(userId)
 	}
 }

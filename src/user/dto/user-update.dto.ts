@@ -1,4 +1,4 @@
-import { IsOptional, IsString, MinLength } from "class-validator"
+import { IsOptional, IsString, IsUrl, MinLength } from "class-validator"
 
 export class UserUpdateDto {
 	@IsOptional()
@@ -6,16 +6,21 @@ export class UserUpdateDto {
 	@MinLength(4, {
 		message: "Username must be at least 4 characters long"
 	})
-	username: string
+	username?: string
 
 	@IsOptional()
 	@IsString()
-	email: string
+	email?: string
 
 	@IsOptional()
+	@IsString()
 	@MinLength(6, {
 		message: "Password must be at least 6 characters long"
 	})
+	password?: string
+
+	@IsOptional()
 	@IsString()
-	password: string
+	@IsUrl()
+	avatar?: string
 }

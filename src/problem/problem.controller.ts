@@ -21,17 +21,22 @@ import { GetSomeProblemsDto } from "./dto/get-some-problem.dto"
 export class ProblemController {
 	constructor(private readonly problemService: ProblemService) {}
 
-	@Auth()
-	@Get("get/:id")
+	@Get("/:id")
 	get(@Param("id") problemId: string) {
-		return this.problemService.getById(+problemId)
+		if (problemId === "popular") {
+			return this.problemService.getPopular()
+		} else {
+			return this.problemService.getById(+problemId)
+		}
 	}
 
-	@Auth()
-	@Get("get/some")
+	@Post("get/some")
 	@UsePipes(new ValidationPipe())
-	getSome(@Body() getSomeProblemsDto: GetSomeProblemsDto) {
-		return this.problemService.getSome(getSomeProblemsDto)
+	async getSome(@Body() getSomeProblemsDto: GetSomeProblemsDto) {
+		const problems = await this.problemService.getSome(getSomeProblemsDto)
+		const maxPage = await this.problemService.getMaxPage(getSomeProblemsDto)
+
+		return { problems, maxPage }
 	}
 
 	@Auth()
@@ -60,17 +65,14 @@ export class ProblemController {
 		return this.problemService.delete(+problemId, userId)
 	}
 
-	@Auth()
 	@Post("attempt/:id")
 	@UsePipes(new ValidationPipe())
 	attempt(
 		@Param("id") problemId: string,
-		@CurrentUser("id") userId: string,
 		@Body() attemptProblemDto: AttemptProblemDto
 	) {
 		return this.problemService.test({
 			problemId: +problemId,
-			userId,
 			testProblemDto: attemptProblemDto
 		})
 	}
@@ -85,7 +87,6 @@ export class ProblemController {
 	) {
 		const testsResult = await this.problemService.test({
 			problemId: +problemId,
-			userId,
 			testProblemDto: submitProblemDto
 		})
 		if (testsResult.success)

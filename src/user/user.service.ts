@@ -3,6 +3,7 @@ import { hash } from "argon2"
 import { AuthRegisterDto } from "src/auth/dto/auth-register.dto"
 import { PrismaService } from "src/prisma.service"
 import { UserUpdateDto } from "./dto/user-update.dto"
+import { utapi } from "@/uploadthing"
 
 @Injectable()
 export class UserService {
@@ -16,7 +17,6 @@ export class UserService {
 		const selectFieldsProblem = {
 			id: true,
 			title: true,
-			description: true,
 			difficulty: true
 		}
 		const user = await this.prisma.user.findUnique({
@@ -49,8 +49,7 @@ export class UserService {
 
 	async update(id: string, dto: UserUpdateDto) {
 		const data: UserUpdateDto = {
-			username: dto.username,
-			email: dto.email,
+			...dto,
 			password: dto.password ? await hash(dto.password) : undefined
 		}
 
@@ -59,5 +58,16 @@ export class UserService {
 			data
 		})
 		return { ...user, password: undefined }
+	}
+
+	async deleteUserAvatar(userId: string) {
+		const { avatar } = await this.prisma.user.findUnique({
+			where: { id: userId }
+		})
+
+		let data = { success: true }
+		if (avatar) data = await utapi.deleteFiles(avatar)
+
+		return data
 	}
 }

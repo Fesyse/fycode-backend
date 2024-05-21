@@ -14,14 +14,16 @@ datasource db {
 }
 
 model User {
-  id       String @id @default(cuid())
-  email    String @unique
+  id       String  @id @default(cuid())
+  email    String  @unique
   username String
   password String
+  avatar   String?
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
+  likedProblems   Problem[] @relation("likes_problems")
   solvedProblems  Problem[] @relation("solved_problems")
   createdProblems Problem[]
 }
@@ -37,7 +39,8 @@ model Problem {
   description String
   difficulty  Difficulty
 
-  likes Int @default(0)
+  usersLiked User[] @relation("likes_problems")
+  likes      Int    @default(0)
 
   testsOptions    Json
   functionOptions Json

@@ -27,6 +27,10 @@ class Filters {
 	@IsString()
 	@IsEnum(Difficulty)
 	difficulty?: Difficulty
+
+	@IsOptional()
+	@IsString()
+	title?: string
 }
 
 class OrderBy {
