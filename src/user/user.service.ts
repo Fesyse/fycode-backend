@@ -1,4 +1,4 @@
-import { Injectable } from "@nestjs/common"
+import { Injectable, Logger } from "@nestjs/common"
 import { hash } from "argon2"
 import { AuthRegisterDto } from "src/auth/dto/auth-register.dto"
 import { PrismaService } from "src/prisma.service"
@@ -60,7 +60,21 @@ export class UserService {
 		return { ...user, password: undefined }
 	}
 
-	async deleteUserAvatar(userId: string) {
+	async updateAvatar(avatar: File, userId: string) {
+		try {
+			const { data } = await utapi.uploadFiles(avatar)
+			const user = await this.prisma.user.update({
+				where: { id: userId },
+				data: { avatar: data.url }
+			})
+
+			return user
+		} catch (e: unknown) {
+			Logger.log(e)
+		}
+	}
+
+	async deleteAvatar(userId: string) {
 		const { avatar } = await this.prisma.user.findUnique({
 			where: { id: userId }
 		})

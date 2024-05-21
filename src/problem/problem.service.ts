@@ -31,24 +31,42 @@ export class ProblemService {
 		}
 	}
 
-	async getById(problemId: number) {
+	async getById(problemId: number, userId: string | undefined) {
 		try {
-			return await this.prisma.problem.findUnique({
+			const problem = await this.prisma.problem.findUnique({
 				where: { id: problemId },
 				select: this.PROBLE_GET_FIELDS_SELECT
 			})
+			if (!userId) return { ...problem, isLikedProblem: false }
+			const isLikedProblem = !!(await this.prisma.problem.findFirst({
+				where: {
+					usersLiked: {
+						some: { id: userId }
+					}
+				}
+			}))
+			return { ...problem, isLikedProblem }
 		} catch {
 			throw new BadRequestException("Problem with given id was not found")
 		}
 	}
 
-	async getPopular() {
-		return this.prisma.problem.findFirst({
+	async getPopular(userId: string | undefined) {
+		const problem = this.prisma.problem.findFirst({
 			select: this.PROBLE_GET_FIELDS_SELECT,
 			orderBy: {
 				likes: "desc"
 			}
 		})
+		if (!userId) return { ...problem, isLikedProblem: false }
+		const isLikedProblem = !!(await this.prisma.problem.findFirst({
+			where: {
+				usersLiked: {
+					some: { id: userId }
+				}
+			}
+		}))
+		return { ...problem, isLikedProblem }
 	}
 
 	async getSome({ pagination, filters, orderBy }: GetSomeProblemsDto) {
@@ -191,5 +209,63 @@ export class ProblemService {
 			functionOptions,
 			handleBadCodeRequest
 		})
+	}
+
+	async dislike(problemId: number, userId: string) {
+		try {
+			const isUserAlreadyDisliked = !!(await this.prisma.problem.findUnique({
+				where: { id: problemId, usersLiked: { some: { id: userId } } }
+			}))
+
+			if (!isUserAlreadyDisliked) {
+				await this.prisma.problem.update({
+					where: {
+						id: problemId
+					},
+					data: {
+						likes: {
+							decrement: 1
+						},
+						usersLiked: {
+							connect: {
+								id: userId
+							}
+						}
+					}
+				})
+			}
+			return true
+		} catch {
+			throw new BadRequestException("Problem with given id was not found.")
+		}
+	}
+
+	async like(problemId: number, userId: string) {
+		try {
+			const isUserAlreadyLiked = !!(await this.prisma.problem.findUnique({
+				where: { id: problemId, usersLiked: { some: { id: userId } } }
+			}))
+
+			if (!isUserAlreadyLiked) {
+				await this.prisma.problem.update({
+					where: {
+						id: problemId
+					},
+					data: {
+						likes: {
+							increment: 1
+						},
+						usersLiked: {
+							connect: {
+								id: userId
+							}
+						}
+					}
+				})
+			}
+			return true
+		} catch {
+			throw new BadRequestException("Problem with given id was not found.")
+		}
 	}
 }

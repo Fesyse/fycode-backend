@@ -3,6 +3,8 @@ import {
 	Controller,
 	Delete,
 	Get,
+	Logger,
+	Patch,
 	Put,
 	UsePipes,
 	ValidationPipe
@@ -11,6 +13,7 @@ import { UserService } from "./user.service"
 import { Auth } from "src/auth/decorators/auth.decorator"
 import { CurrentUser } from "src/auth/decorators/user.decorator"
 import { UserUpdateDto } from "./dto/user-update.dto"
+import { UpdateAvatarDto } from "./dto/update-avatar.dto"
 
 @Controller("user")
 export class UserController {
@@ -42,8 +45,18 @@ export class UserController {
 	}
 
 	@Auth()
+	@Patch("update-avatar")
+	async updateAvatar(
+		// @CurrentUser("id") userId: string,
+		@Body() updateAvatarDto: UpdateAvatarDto
+	) {
+		Logger.log(updateAvatarDto)
+		// return this.userService.updateAvatar(updateAvatarDto.avatar, userId)
+	}
+
+	@Auth()
 	@Delete("remove-avatar")
-	async removeUserAvatar(@CurrentUser("id") userId: string) {
-		return this.userService.deleteUserAvatar(userId)
+	async removeAvatar(@CurrentUser("id") userId: string) {
+		return this.userService.deleteAvatar(userId)
 	}
 }

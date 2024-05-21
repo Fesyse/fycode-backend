@@ -22,11 +22,14 @@ export class ProblemController {
 	constructor(private readonly problemService: ProblemService) {}
 
 	@Get("/:id")
-	get(@Param("id") problemId: string) {
+	get(
+		@CurrentUser("id") userId: string | undefined,
+		@Param("id") problemId: string
+	) {
 		if (problemId === "popular") {
-			return this.problemService.getPopular()
+			return this.problemService.getPopular(userId)
 		} else {
-			return this.problemService.getById(+problemId)
+			return this.problemService.getById(+problemId, userId)
 		}
 	}
 
@@ -92,5 +95,23 @@ export class ProblemController {
 		if (testsResult.success)
 			await this.problemService.updateUserSolvedProblems(+problemId, userId)
 		return testsResult
+	}
+
+	@Auth()
+	@Post("like/:id")
+	async like(
+		@CurrentUser("id") userId: string,
+		@Param("id") problemId: string
+	) {
+		return this.problemService.like(+problemId, userId)
+	}
+
+	@Auth()
+	@Post("dislike/:id")
+	async dislike(
+		@CurrentUser("id") userId: string,
+		@Param("id") problemId: string
+	) {
+		return this.problemService.dislike(+problemId, userId)
 	}
 }
