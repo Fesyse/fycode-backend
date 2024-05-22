@@ -3,17 +3,20 @@ import {
 	Controller,
 	Delete,
 	Get,
-	Logger,
+	HttpStatus,
+	ParseFilePipeBuilder,
 	Patch,
 	Put,
+	UploadedFile,
+	UseInterceptors,
 	UsePipes,
 	ValidationPipe
 } from "@nestjs/common"
+import { FileInterceptor } from "@nestjs/platform-express"
 import { UserService } from "./user.service"
 import { Auth } from "src/auth/decorators/auth.decorator"
 import { CurrentUser } from "src/auth/decorators/user.decorator"
 import { UserUpdateDto } from "./dto/user-update.dto"
-import { UpdateAvatarDto } from "./dto/update-avatar.dto"
 
 @Controller("user")
 export class UserController {
@@ -46,12 +49,21 @@ export class UserController {
 
 	@Auth()
 	@Patch("update-avatar")
+	@UseInterceptors(FileInterceptor("avatar"))
 	async updateAvatar(
-		// @CurrentUser("id") userId: string,
-		@Body() updateAvatarDto: UpdateAvatarDto
+		@UploadedFile(
+			new ParseFilePipeBuilder()
+				.addMaxSizeValidator({
+					maxSize: 4e6
+				})
+				.build({
+					errorHttpStatusCode: HttpStatus.UNPROCESSABLE_ENTITY
+				})
+		)
+		avatar: Express.Multer.File,
+		@CurrentUser("id") userId: string
 	) {
-		Logger.log(updateAvatarDto)
-		// return this.userService.updateAvatar(updateAvatarDto.avatar, userId)
+		return this.userService.updateAvatar(userId)
 	}
 
 	@Auth()

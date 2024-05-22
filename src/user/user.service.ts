@@ -1,9 +1,8 @@
-import { Injectable, Logger } from "@nestjs/common"
+import { Injectable } from "@nestjs/common"
 import { hash } from "argon2"
 import { AuthRegisterDto } from "src/auth/dto/auth-register.dto"
 import { PrismaService } from "src/prisma.service"
 import { UserUpdateDto } from "./dto/user-update.dto"
-import { utapi } from "@/uploadthing"
 
 @Injectable()
 export class UserService {
@@ -60,18 +59,14 @@ export class UserService {
 		return { ...user, password: undefined }
 	}
 
-	async updateAvatar(avatar: File, userId: string) {
-		try {
-			const { data } = await utapi.uploadFiles(avatar)
-			const user = await this.prisma.user.update({
-				where: { id: userId },
-				data: { avatar: data.url }
-			})
+	async updateAvatar(userId: string) {
+		const data = { url: "test" }
+		const user = await this.prisma.user.update({
+			where: { id: userId },
+			data: { avatar: data.url }
+		})
 
-			return user
-		} catch (e: unknown) {
-			Logger.log(e)
-		}
+		return user
 	}
 
 	async deleteAvatar(userId: string) {
@@ -79,9 +74,7 @@ export class UserService {
 			where: { id: userId }
 		})
 
-		let data = { success: true }
-		if (avatar) data = await utapi.deleteFiles(avatar)
-
+		const data = { success: true }
 		return data
 	}
 }
