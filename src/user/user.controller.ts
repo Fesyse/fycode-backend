@@ -3,10 +3,10 @@ import {
 	Controller,
 	Delete,
 	Get,
-	HttpStatus,
-	ParseFilePipeBuilder,
+	Param,
 	Patch,
 	Put,
+	Res,
 	UploadedFile,
 	UseInterceptors,
 	UsePipes,
@@ -15,8 +15,11 @@ import {
 import { FileInterceptor } from "@nestjs/platform-express"
 import { UserService } from "./user.service"
 import { Auth } from "src/auth/decorators/auth.decorator"
-import { CurrentUser } from "src/auth/decorators/user.decorator"
+import { CurrentUser } from "@/auth/decorators/user.decorator"
 import { UserUpdateDto } from "./dto/user-update.dto"
+import { diskStorage } from "multer"
+import { extname } from "path"
+import { User } from "@prisma/client"
 
 @Controller("user")
 export class UserController {
@@ -49,26 +52,35 @@ export class UserController {
 
 	@Auth()
 	@Patch("update-avatar")
-	@UseInterceptors(FileInterceptor("avatar"))
+	@UseInterceptors(
+		FileInterceptor("avatar", {
+			storage: diskStorage({
+				destination: "./uploads/avatars",
+				filename: (req, file, callback) => {
+					const originalFileName = file.originalname.split(".")[0]
+					const fileExtension = extname(file.originalname)
+					const filename = `${originalFileName}_${(req.user as User).id}_${new Date().getTime()}${fileExtension}`
+					callback(null, filename)
+				}
+			})
+		})
+	)
 	async updateAvatar(
-		@UploadedFile(
-			new ParseFilePipeBuilder()
-				.addMaxSizeValidator({
-					maxSize: 4e6
-				})
-				.build({
-					errorHttpStatusCode: HttpStatus.UNPROCESSABLE_ENTITY
-				})
-		)
+		@UploadedFile()
 		avatar: Express.Multer.File,
 		@CurrentUser("id") userId: string
 	) {
-		return this.userService.updateAvatar(userId)
+		return this.userService.updateAvatar(avatar, userId)
 	}
 
 	@Auth()
 	@Delete("remove-avatar")
 	async removeAvatar(@CurrentUser("id") userId: string) {
-		return this.userService.deleteAvatar(userId)
+		return this.userService.removeAvatar(userId)
+	}
+
+	@Get("avatar/:path")
+	async returnAvatarImage(@Param("path") path: string, @Res() response) {
+		return response.sendFile(path, { root: "./uploads/avatars" })
 	}
 }
