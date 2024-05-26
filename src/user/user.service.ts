@@ -13,7 +13,7 @@ export class UserService {
 	async getById(
 		id: string,
 		includePassword: boolean = true,
-		include?: { createdProblems?: boolean; solvedProblems?: boolean }
+		include?: { problems?: boolean }
 	) {
 		const selectFieldsProblem = {
 			id: true,
@@ -23,10 +23,16 @@ export class UserService {
 		const user = await this.prisma.user.findUnique({
 			where: { id },
 			include: {
-				createdProblems: include?.createdProblems
+				createdProblems: include?.problems
 					? { select: selectFieldsProblem }
 					: false,
-				solvedProblems: include?.solvedProblems
+				solvedProblems: include?.problems
+					? { select: selectFieldsProblem }
+					: false,
+				dislikedProblems: include?.problems
+					? { select: selectFieldsProblem }
+					: false,
+				likedProblems: include?.problems
 					? { select: selectFieldsProblem }
 					: false
 			}

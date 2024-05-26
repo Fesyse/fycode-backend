@@ -45,8 +45,7 @@ export class UserController {
 	@Get("profile")
 	async getProfile(@CurrentUser("id") id: string) {
 		return this.userService.getById(id, false, {
-			createdProblems: true,
-			solvedProblems: true
+			problems: true
 		})
 	}
 

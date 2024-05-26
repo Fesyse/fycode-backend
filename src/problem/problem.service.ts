@@ -253,75 +253,72 @@ export class ProblemService {
 		})
 	}
 
-	async dislike(problemId: number, userId: string, undo = false) {
+	async like(problemId: number, userId: string, undo = false) {
 		try {
-			const isUserAlreadyDisliked = !!(await this.prisma.problem.findUnique({
-				where: { id: problemId, usersDisliked: { some: { id: userId } } }
+			const isUserLiked = !!(await this.prisma.user.findUnique({
+				where: { id: userId, likedProblems: { some: { id: problemId } } }
 			}))
-
 			let likes: null | number = null
-			if (!isUserAlreadyDisliked) {
-				likes = (
-					await this.prisma.problem.update({
-						where: {
-							id: problemId
-						},
-						select: { likes: true },
-						data: {
-							likes: {
-								decrement: 1
-							},
-							usersLiked: {
-								delete: {
-									id: userId
-								}
-							},
-							usersDisliked: {
-								[undo ? "delete" : "connect"]: {
-									id: userId
-								}
+
+			const response = await this.prisma.problem.update({
+				where: {
+					id: problemId
+				},
+				select: { likes: true, usersDisliked: true, usersLiked: true },
+				data: {
+					likes: !isUserLiked
+						? {
+								increment: 1
 							}
+						: undefined,
+					usersDisliked: {
+						disconnect: {
+							id: userId
 						}
-					})
-				).likes
-			}
+					},
+					usersLiked: {
+						[undo ? "disconnect" : "connect"]: {
+							id: userId
+						}
+					}
+				}
+			})
+			likes = response.likes
 			return likes
 		} catch {
 			throw new BadRequestException("Problem with given id was not found.")
 		}
 	}
-
-	async like(problemId: number, userId: string, undo = false) {
+	async dislike(problemId: number, userId: string, undo = false) {
 		try {
-			const isUserAlreadyLiked = !!(await this.prisma.problem.findUnique({
-				where: { id: problemId, usersLiked: { some: { id: userId } } }
+			const isUserDisliked = !!(await this.prisma.user.findUnique({
+				where: { id: userId, dislikedProblems: { some: { id: problemId } } }
 			}))
 			let likes: null | number = null
-			if (!isUserAlreadyLiked) {
-				likes = (
-					await this.prisma.problem.update({
-						where: {
-							id: problemId
-						},
-						select: { likes: true },
-						data: {
-							likes: {
-								increment: 1
-							},
-							usersDisliked: {
-								delete: {
-									id: userId
-								}
-							},
-							usersLiked: {
-								[undo ? "delete" : "connect"]: {
-									id: userId
-								}
+			const response = await this.prisma.problem.update({
+				where: {
+					id: problemId
+				},
+				select: { likes: true },
+				data: {
+					likes: !isUserDisliked
+						? {
+								decrement: 1
 							}
+						: undefined,
+					usersLiked: {
+						disconnect: {
+							id: userId
 						}
-					})
-				).likes
-			}
+					},
+					usersDisliked: {
+						[undo ? "disconnect" : "connect"]: {
+							id: userId
+						}
+					}
+				}
+			})
+			likes = response.likes
 			return likes
 		} catch {
 			throw new BadRequestException("Problem with given id was not found.")
