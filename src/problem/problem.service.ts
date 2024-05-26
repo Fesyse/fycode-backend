@@ -11,7 +11,7 @@ import type { UpdateProblemDto } from "./dto/update-problem.dto"
 import { AttemptProblemDto, CustomTest } from "./dto/attempt-problem.dto"
 import { SubmitProblemDto } from "./dto/submit-problem.dto"
 import { codeSecurityCheck } from "@/utils"
-import { GetSomeProblemsDto } from "./dto/get-some-problem.dto"
+import { GetPageProblemsDto } from "./dto/get-some-problem.dto"
 
 @Injectable()
 export class ProblemService {
@@ -22,6 +22,7 @@ export class ProblemService {
 		description: true,
 		difficulty: true,
 		likes: true,
+		tags: true,
 		creator: {
 			select: {
 				id: true,
@@ -45,12 +46,18 @@ export class ProblemService {
 					}
 				}
 			}))
-			return { ...problem, isLikedProblem }
+			const isDislikedProblem = !!(await this.prisma.problem.findFirst({
+				where: {
+					usersDisliked: {
+						some: { id: userId }
+					}
+				}
+			}))
+			return { ...problem, isLikedProblem, isDislikedProblem }
 		} catch {
 			throw new BadRequestException("Problem with given id was not found")
 		}
 	}
-
 	async getPopular(userId: string | undefined) {
 		const problem = this.prisma.problem.findFirst({
 			select: this.PROBLE_GET_FIELDS_SELECT,
@@ -66,10 +73,17 @@ export class ProblemService {
 				}
 			}
 		}))
-		return { ...problem, isLikedProblem }
+		const isDislikedProblem = !!(await this.prisma.problem.findFirst({
+			where: {
+				usersDisliked: {
+					some: { id: userId }
+				}
+			}
+		}))
+		return { ...problem, isLikedProblem, isDislikedProblem }
 	}
 
-	async getSome({ pagination, filters, orderBy }: GetSomeProblemsDto) {
+	async getPage({ pagination, filters, orderBy }: GetPageProblemsDto) {
 		return this.prisma.problem.findMany({
 			where: {
 				...filters,
@@ -87,10 +101,31 @@ export class ProblemService {
 			orderBy: orderBy ?? { id: "asc" }
 		})
 	}
-
-	async getMaxPage({ filters, pagination }: GetSomeProblemsDto) {
+	async getMaxPage({ filters, pagination }: GetPageProblemsDto) {
 		const pageCount = await this.prisma.problem.count({ where: filters })
 		return Math.floor(pageCount / pagination.pageSize)
+	}
+
+	async getNextProblemId(fromProblemId: number) {
+		return this.prisma.problem.findFirst({
+			where: { id: { gt: fromProblemId } },
+			select: { id: true }
+		})
+	}
+	async getPrevProblemId(fromProblemId: number) {
+		return this.prisma.problem.findFirst({
+			where: { id: { lt: fromProblemId } },
+			select: { id: true }
+		})
+	}
+	async getRandomProblemId() {
+		const problemCount = await this.prisma.problem.count()
+		const skip = Math.floor(Math.random() * problemCount)
+		return this.prisma.problem.findFirst({
+			skip,
+			select: { id: true },
+			orderBy: { id: "asc" }
+		})
 	}
 
 	async create(creatorId: string, createProblemDto: CreateProblemDto) {
@@ -106,6 +141,10 @@ export class ProblemService {
 		const problem = await this.prisma.problem.create({
 			data: {
 				...createProblemDto,
+				tags: [
+					createProblemDto.difficulty.toUpperCase(),
+					...createProblemDto.tags
+				],
 				testsOptions,
 				functionOptions,
 				creator: { connect: { id: creatorId } }
@@ -137,11 +176,14 @@ export class ProblemService {
 	async update(problemId: number, updateProblemDto: UpdateProblemDto) {
 		const functionOptions =
 			updateProblemDto.functionOptions as unknown as Prisma.JsonObject
-		if (updateProblemDto.solution) {
+		const solution = updateProblemDto.solution
+			? updateProblemDto.solution.replaceAll("\\n", "\n")
+			: undefined
+		if (solution) {
 			try {
-				eval(updateProblemDto.solution)
+				eval(solution)
 			} catch (e) {
-				throw new BadRequestException(e)
+				throw new BadRequestException(e.message)
 			}
 		}
 		try {
@@ -211,59 +253,76 @@ export class ProblemService {
 		})
 	}
 
-	async dislike(problemId: number, userId: string) {
+	async dislike(problemId: number, userId: string, undo = false) {
 		try {
 			const isUserAlreadyDisliked = !!(await this.prisma.problem.findUnique({
-				where: { id: problemId, usersLiked: { some: { id: userId } } }
+				where: { id: problemId, usersDisliked: { some: { id: userId } } }
 			}))
 
+			let likes: null | number = null
 			if (!isUserAlreadyDisliked) {
-				await this.prisma.problem.update({
-					where: {
-						id: problemId
-					},
-					data: {
-						likes: {
-							decrement: 1
+				likes = (
+					await this.prisma.problem.update({
+						where: {
+							id: problemId
 						},
-						usersLiked: {
-							connect: {
-								id: userId
+						select: { likes: true },
+						data: {
+							likes: {
+								decrement: 1
+							},
+							usersLiked: {
+								delete: {
+									id: userId
+								}
+							},
+							usersDisliked: {
+								[undo ? "delete" : "connect"]: {
+									id: userId
+								}
 							}
 						}
-					}
-				})
+					})
+				).likes
 			}
-			return true
+			return likes
 		} catch {
 			throw new BadRequestException("Problem with given id was not found.")
 		}
 	}
 
-	async like(problemId: number, userId: string) {
+	async like(problemId: number, userId: string, undo = false) {
 		try {
 			const isUserAlreadyLiked = !!(await this.prisma.problem.findUnique({
 				where: { id: problemId, usersLiked: { some: { id: userId } } }
 			}))
-
+			let likes: null | number = null
 			if (!isUserAlreadyLiked) {
-				await this.prisma.problem.update({
-					where: {
-						id: problemId
-					},
-					data: {
-						likes: {
-							increment: 1
+				likes = (
+					await this.prisma.problem.update({
+						where: {
+							id: problemId
 						},
-						usersLiked: {
-							connect: {
-								id: userId
+						select: { likes: true },
+						data: {
+							likes: {
+								increment: 1
+							},
+							usersDisliked: {
+								delete: {
+									id: userId
+								}
+							},
+							usersLiked: {
+								[undo ? "delete" : "connect"]: {
+									id: userId
+								}
 							}
 						}
-					}
-				})
+					})
+				).likes
 			}
-			return true
+			return likes
 		} catch {
 			throw new BadRequestException("Problem with given id was not found.")
 		}

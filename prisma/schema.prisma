@@ -23,9 +23,10 @@ model User {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  likedProblems   Problem[] @relation("likes_problems")
-  solvedProblems  Problem[] @relation("solved_problems")
-  createdProblems Problem[]
+  dislikedProblems Problem[] @relation("dislikes_problems")
+  likedProblems    Problem[] @relation("likes_problems")
+  solvedProblems   Problem[] @relation("solved_problems")
+  createdProblems  Problem[]
 }
 
 model Problem {
@@ -38,9 +39,11 @@ model Problem {
   title       String
   description String
   difficulty  Difficulty
+  tags        String[]
 
-  usersLiked User[] @relation("likes_problems")
-  likes      Int    @default(0)
+  usersDisliked User[] @relation("dislikes_problems")
+  usersLiked    User[] @relation("likes_problems")
+  likes         Int    @default(0)
 
   testsOptions    Json
   functionOptions Json

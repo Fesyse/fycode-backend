@@ -45,7 +45,7 @@ class OrderBy {
 	likes?: Order
 }
 
-export class GetSomeProblemsDto {
+export class GetPageProblemsDto {
 	@IsObject()
 	@ValidateNested()
 	@Type(() => Pagination)

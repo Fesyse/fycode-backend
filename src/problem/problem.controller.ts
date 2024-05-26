@@ -7,7 +7,8 @@ import {
 	UsePipes,
 	ValidationPipe,
 	Delete,
-	Get
+	Get,
+	Query
 } from "@nestjs/common"
 import { ProblemService } from "./problem.service"
 import { CreateProblemDto } from "./dto/create-problem.dto"
@@ -16,30 +17,44 @@ import { Auth } from "@/auth/decorators/auth.decorator"
 import { CurrentUser } from "@/auth/decorators/user.decorator"
 import { AttemptProblemDto } from "./dto/attempt-problem.dto"
 import { SubmitProblemDto } from "./dto/submit-problem.dto"
-import { GetSomeProblemsDto } from "./dto/get-some-problem.dto"
+import { GetPageProblemsDto } from "./dto/get-some-problem.dto"
 @Controller("problem")
 export class ProblemController {
 	constructor(private readonly problemService: ProblemService) {}
 
 	@Get("/:id")
+	@UsePipes(new ValidationPipe())
 	get(
-		@CurrentUser("id") userId: string | undefined,
-		@Param("id") problemId: string
+		@Param("id") problemId: string,
+		@Query() query: { userId: string | undefined }
 	) {
 		if (problemId === "popular") {
-			return this.problemService.getPopular(userId)
+			return this.problemService.getPopular(query.userId)
 		} else {
-			return this.problemService.getById(+problemId, userId)
+			return this.problemService.getById(+problemId, query.userId)
 		}
 	}
 
-	@Post("get/some")
+	@Post("get/page")
 	@UsePipes(new ValidationPipe())
-	async getSome(@Body() getSomeProblemsDto: GetSomeProblemsDto) {
-		const problems = await this.problemService.getSome(getSomeProblemsDto)
-		const maxPage = await this.problemService.getMaxPage(getSomeProblemsDto)
+	async getPage(@Body() getPageProblemsDto: GetPageProblemsDto) {
+		const problems = await this.problemService.getPage(getPageProblemsDto)
+		const maxPage = await this.problemService.getMaxPage(getPageProblemsDto)
 
 		return { problems, maxPage }
+	}
+
+	@Get("get/next")
+	async getNextProblemId(@Query("fromProblemId") fromProblemId: string) {
+		return this.problemService.getNextProblemId(+fromProblemId)
+	}
+	@Get("get/prev")
+	async getPrevProblemId(@Query("fromProblemId") fromProblemId: string) {
+		return this.problemService.getPrevProblemId(+fromProblemId)
+	}
+	@Get("get/random")
+	async getRandomProblemId() {
+		return this.problemService.getRandomProblemId()
 	}
 
 	@Auth()
@@ -101,17 +116,23 @@ export class ProblemController {
 	@Post("like/:id")
 	async like(
 		@CurrentUser("id") userId: string,
-		@Param("id") problemId: string
+		@Param("id") problemId: string,
+		@Query() query: { undo?: string }
 	) {
-		return this.problemService.like(+problemId, userId)
+		return this.problemService.like(+problemId, userId, query.undo === "false")
 	}
 
 	@Auth()
 	@Post("dislike/:id")
 	async dislike(
 		@CurrentUser("id") userId: string,
-		@Param("id") problemId: string
+		@Param("id") problemId: string,
+		@Query() query: { undo?: string }
 	) {
-		return this.problemService.dislike(+problemId, userId)
+		return this.problemService.dislike(
+			+problemId,
+			userId,
+			query.undo === "false"
+		)
 	}
 }

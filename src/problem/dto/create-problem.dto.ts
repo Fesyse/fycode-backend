@@ -57,6 +57,10 @@ export class CreateProblemDto {
 	@IsEnum(Difficulty)
 	difficulty: Difficulty
 
+	@IsArray()
+	@IsString({ each: true })
+	tags: string[]
+
 	@IsObject()
 	@ValidateNested()
 	@Type(() => TestsOptions)

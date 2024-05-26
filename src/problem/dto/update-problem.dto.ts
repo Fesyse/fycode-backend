@@ -52,6 +52,11 @@ export class UpdateProblemDto {
 	difficulty?: Difficulty
 
 	@IsOptional()
+	@IsArray()
+	@IsString({ each: true })
+	tags: string[]
+
+	@IsOptional()
 	@IsObject()
 	@ValidateNested()
 	@Type(() => OptionalFunctionOptions)
