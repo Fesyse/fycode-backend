@@ -239,63 +239,90 @@ export class ProblemService {
 			handleBadCodeRequest
 		})
 	}
-
+  
 	async like(problemId: number, userId: string, undo = false) {
 		try {
-			await this.prisma.problem.update({
+			const isUserLiked = !!(await this.prisma.user.findUnique({
+				where: { id: userId, likedProblems: { some: { id: problemId } } }
+			}))
+
+			// if user is not liked and he wants to undo it - dont do anything
+			// if user is liked and he wants to undo it - decrement
+			// if user is not liked and he wants to like it - increment
+			// otherwise - dont do anything
+			const increment =
+				!isUserLiked && undo
+					? 0
+					: isUserLiked && undo
+						? -1
+						: !isUserLiked && !undo
+							? 1
+							: 0
+			const response = await this.prisma.problem.update({
 				where: {
 					id: problemId
 				},
+				select: { likes: true, usersDisliked: true, usersLiked: true },
 				data: {
-					usersLiked: {
-						[undo ? "disconnect" : "connect"]: {
-							id: userId
-						}
+					likes: {
+						increment
 					},
 					usersDisliked: {
 						disconnect: {
 							id: userId
 						}
+					},
+					usersLiked: {
+						[undo ? "disconnect" : "connect"]: {
+							id: userId
+						}
 					}
 				}
 			})
-			const countUsersThatLiked = await this.prisma.user.count({
-				where: { likedProblems: { some: { id: problemId } } }
-			})
-			const countUsersThatDisliked = await this.prisma.user.count({
-				where: { dislikedProblems: { some: { id: problemId } } }
-			})
-			return countUsersThatLiked - countUsersThatDisliked
+			return response.likes
 		} catch {
 			throw new BadRequestException("Problem with given id was not found.")
 		}
 	}
 	async dislike(problemId: number, userId: string, undo = false) {
 		try {
-			await this.prisma.problem.update({
+			const isUserDisliked = !!(await this.prisma.user.findUnique({
+				where: { id: userId, dislikedProblems: { some: { id: problemId } } }
+			}))
+			// if user is not disliked and he wants to undo it - dont do anything
+			// if user is disliked and he wants to undo it - increment
+			// if user is not disliked and he wants to dislike it - decrement
+			// otherwise - dont do anything
+			const increment =
+				!isUserDisliked && undo
+					? 0
+					: isUserDisliked && undo
+						? 1
+						: !isUserDisliked && !undo
+							? -1
+							: 0
+			const response = await this.prisma.problem.update({
 				where: {
 					id: problemId
 				},
+				select: { likes: true },
 				data: {
-					usersDisliked: {
-						[undo ? "disconnect" : "connect"]: {
-							id: userId
-						}
+					likes: {
+						increment
 					},
 					usersLiked: {
 						disconnect: {
 							id: userId
 						}
+					},
+					usersDisliked: {
+						[undo ? "disconnect" : "connect"]: {
+							id: userId
+						}
 					}
 				}
 			})
-			const countUsersThatLiked = await this.prisma.user.count({
-				where: { likedProblems: { some: { id: problemId } } }
-			})
-			const countUsersThatDisliked = await this.prisma.user.count({
-				where: { dislikedProblems: { some: { id: problemId } } }
-			})
-			return countUsersThatLiked - countUsersThatDisliked
+			return response.likes
 		} catch {
 			throw new BadRequestException("Problem with given id was not found.")
 		}
