@@ -28,11 +28,7 @@ export class ProblemController {
 		@Param("id") problemId: string,
 		@Query() query: { userId: string | undefined }
 	) {
-		if (problemId === "popular") {
-			return this.problemService.getPopular(query.userId)
-		} else {
-			return this.problemService.getById(+problemId, query.userId)
-		}
+		return this.problemService.getById(+problemId, query.userId)
 	}
 
 	@Post("get/page")
@@ -119,7 +115,7 @@ export class ProblemController {
 		@Param("id") problemId: string,
 		@Query() query: { undo?: string }
 	) {
-		return this.problemService.like(+problemId, userId, query.undo === "false")
+		return this.problemService.like(+problemId, userId, query.undo !== "false")
 	}
 
 	@Auth()
@@ -132,7 +128,7 @@ export class ProblemController {
 		return this.problemService.dislike(
 			+problemId,
 			userId,
-			query.undo === "false"
+			query.undo !== "false"
 		)
 	}
 }

@@ -16,7 +16,7 @@ import { GetPageProblemsDto } from "./dto/get-some-problem.dto"
 @Injectable()
 export class ProblemService {
 	constructor(private prisma: PrismaService) {}
-	private PROBLE_GET_FIELDS_SELECT = {
+	private PROBLE_GET_FIELDS_SELECT: Prisma.ProblemFindUniqueArgs["select"] = {
 		id: true,
 		title: true,
 		description: true,
@@ -29,15 +29,18 @@ export class ProblemService {
 				avatar: true,
 				username: true
 			}
-		}
+		},
+		functionOptions: true
 	}
 
 	async getById(problemId: number, userId: string | undefined) {
 		try {
-			const problem = await this.prisma.problem.findUnique({
-				where: { id: problemId },
-				select: this.PROBLE_GET_FIELDS_SELECT
-			})
+			const problem = isNaN(problemId)
+				? await this.getPopular()
+				: await this.prisma.problem.findUnique({
+						where: { id: problemId },
+						select: this.PROBLE_GET_FIELDS_SELECT
+					})
 			if (!userId) return { ...problem, isLikedProblem: false }
 			const isLikedProblem = !!(await this.prisma.problem.findFirst({
 				where: {
@@ -58,29 +61,13 @@ export class ProblemService {
 			throw new BadRequestException("Problem with given id was not found")
 		}
 	}
-	async getPopular(userId: string | undefined) {
-		const problem = this.prisma.problem.findFirst({
+	async getPopular() {
+		return this.prisma.problem.findFirst({
 			select: this.PROBLE_GET_FIELDS_SELECT,
 			orderBy: {
 				likes: "desc"
 			}
 		})
-		if (!userId) return { ...problem, isLikedProblem: false }
-		const isLikedProblem = !!(await this.prisma.problem.findFirst({
-			where: {
-				usersLiked: {
-					some: { id: userId }
-				}
-			}
-		}))
-		const isDislikedProblem = !!(await this.prisma.problem.findFirst({
-			where: {
-				usersDisliked: {
-					some: { id: userId }
-				}
-			}
-		}))
-		return { ...problem, isLikedProblem, isDislikedProblem }
 	}
 
 	async getPage({ pagination, filters, orderBy }: GetPageProblemsDto) {
@@ -266,11 +253,9 @@ export class ProblemService {
 				},
 				select: { likes: true, usersDisliked: true, usersLiked: true },
 				data: {
-					likes: !isUserLiked
-						? {
-								increment: 1
-							}
-						: undefined,
+					likes: {
+						increment: isUserLiked ? 0 : 1
+					},
 					usersDisliked: {
 						disconnect: {
 							id: userId
@@ -301,11 +286,7 @@ export class ProblemService {
 				},
 				select: { likes: true },
 				data: {
-					likes: !isUserDisliked
-						? {
-								decrement: 1
-							}
-						: undefined,
+					likes: isUserDisliked ? 0 : 1,
 					usersLiked: {
 						disconnect: {
 							id: userId
