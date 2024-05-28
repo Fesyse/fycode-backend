@@ -43,7 +43,6 @@ model Problem {
 
   usersDisliked User[] @relation("dislikes_problems")
   usersLiked    User[] @relation("likes_problems")
-  likes         Int    @default(0)
 
   testsOptions    Json
   functionOptions Json

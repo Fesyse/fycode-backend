@@ -242,65 +242,60 @@ export class ProblemService {
 
 	async like(problemId: number, userId: string, undo = false) {
 		try {
-			const isUserLiked = !!(await this.prisma.user.findUnique({
-				where: { id: userId, likedProblems: { some: { id: problemId } } }
-			}))
-			let likes: null | number = null
-
-			const response = await this.prisma.problem.update({
+			await this.prisma.problem.update({
 				where: {
 					id: problemId
 				},
-				select: { likes: true, usersDisliked: true, usersLiked: true },
 				data: {
-					likes: {
-						increment: isUserLiked ? 0 : 1
+					usersLiked: {
+						[undo ? "disconnect" : "connect"]: {
+							id: userId
+						}
 					},
 					usersDisliked: {
 						disconnect: {
 							id: userId
 						}
-					},
-					usersLiked: {
-						[undo ? "disconnect" : "connect"]: {
-							id: userId
-						}
 					}
 				}
 			})
-			likes = response.likes
-			return likes
+			const countUsersThatLiked = await this.prisma.user.count({
+				where: { likedProblems: { some: { id: problemId } } }
+			})
+			const countUsersThatDisliked = await this.prisma.user.count({
+				where: { dislikedProblems: { some: { id: problemId } } }
+			})
+			return countUsersThatLiked - countUsersThatDisliked
 		} catch {
 			throw new BadRequestException("Problem with given id was not found.")
 		}
 	}
 	async dislike(problemId: number, userId: string, undo = false) {
 		try {
-			const isUserDisliked = !!(await this.prisma.user.findUnique({
-				where: { id: userId, dislikedProblems: { some: { id: problemId } } }
-			}))
-			let likes: null | number = null
-			const response = await this.prisma.problem.update({
+			await this.prisma.problem.update({
 				where: {
 					id: problemId
 				},
-				select: { likes: true },
 				data: {
-					likes: isUserDisliked ? 0 : 1,
-					usersLiked: {
-						disconnect: {
+					usersDisliked: {
+						[undo ? "disconnect" : "connect"]: {
 							id: userId
 						}
 					},
-					usersDisliked: {
-						[undo ? "disconnect" : "connect"]: {
+					usersLiked: {
+						disconnect: {
 							id: userId
 						}
 					}
 				}
 			})
-			likes = response.likes
-			return likes
+			const countUsersThatLiked = await this.prisma.user.count({
+				where: { likedProblems: { some: { id: problemId } } }
+			})
+			const countUsersThatDisliked = await this.prisma.user.count({
+				where: { dislikedProblems: { some: { id: problemId } } }
+			})
+			return countUsersThatLiked - countUsersThatDisliked
 		} catch {
 			throw new BadRequestException("Problem with given id was not found.")
 		}
