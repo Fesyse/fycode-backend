@@ -1,4 +1,4 @@
-import { BadRequestException, Injectable } from "@nestjs/common"
+import { BadRequestException, Injectable, Logger } from "@nestjs/common"
 import { PrismaService } from "@/prisma.service"
 import { testSolution } from "./user-solution.test"
 import { Prisma } from "@prisma/client"
@@ -245,8 +245,19 @@ export class ProblemService {
 			const isUserLiked = !!(await this.prisma.user.findUnique({
 				where: { id: userId, likedProblems: { some: { id: problemId } } }
 			}))
-			let likes: null | number = null
 
+			// if user is not liked and he wants to undo it - dont do anything
+			// if user is liked and he wants to undo it - decrement
+			// if user is not liked and he wants to like it - increment
+			// otherwise - dont do anything
+			const increment =
+				!isUserLiked && undo
+					? 0
+					: isUserLiked && undo
+						? -1
+						: !isUserLiked && !undo
+							? 1
+							: 0
 			const response = await this.prisma.problem.update({
 				where: {
 					id: problemId
@@ -254,7 +265,7 @@ export class ProblemService {
 				select: { likes: true, usersDisliked: true, usersLiked: true },
 				data: {
 					likes: {
-						increment: isUserLiked ? 0 : 1
+						increment
 					},
 					usersDisliked: {
 						disconnect: {
@@ -268,8 +279,7 @@ export class ProblemService {
 					}
 				}
 			})
-			likes = response.likes
-			return likes
+			return response.likes
 		} catch {
 			throw new BadRequestException("Problem with given id was not found.")
 		}
@@ -279,14 +289,27 @@ export class ProblemService {
 			const isUserDisliked = !!(await this.prisma.user.findUnique({
 				where: { id: userId, dislikedProblems: { some: { id: problemId } } }
 			}))
-			let likes: null | number = null
+			// if user is not disliked and he wants to undo it - dont do anything
+			// if user is disliked and he wants to undo it - increment
+			// if user is not disliked and he wants to dislike it - decrement
+			// otherwise - dont do anything
+			const increment =
+				!isUserDisliked && undo
+					? 0
+					: isUserDisliked && undo
+						? 1
+						: !isUserDisliked && !undo
+							? -1
+							: 0
 			const response = await this.prisma.problem.update({
 				where: {
 					id: problemId
 				},
 				select: { likes: true },
 				data: {
-					likes: isUserDisliked ? 0 : 1,
+					likes: {
+						increment
+					},
 					usersLiked: {
 						disconnect: {
 							id: userId
@@ -299,8 +322,7 @@ export class ProblemService {
 					}
 				}
 			})
-			likes = response.likes
-			return likes
+			return response.likes
 		} catch {
 			throw new BadRequestException("Problem with given id was not found.")
 		}
