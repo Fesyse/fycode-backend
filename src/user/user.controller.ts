@@ -41,9 +41,8 @@ export class UserController {
 		return this.userService.getById(id, false)
 	}
 
-	@Auth()
-	@Get("profile")
-	async getProfile(@CurrentUser("id") id: string) {
+	@Get("profile/:id")
+	async getProfile(@Param("id") id: string) {
 		return this.userService.getById(id, false, {
 			problems: true
 		})
