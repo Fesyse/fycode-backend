@@ -188,13 +188,19 @@ export class ProblemService {
 		}
 	}
 
-	async updateUserSolvedProblems(problemId: number, userId: string) {
+	async updateUserProblems(
+		problemId: number,
+		userId: string,
+		isSuccess: boolean
+	) {
 		return this.prisma.user.update({
 			where: { id: userId },
 			data: {
-				solvedProblems: {
-					connect: { id: problemId }
-				}
+				solvedProblems: isSuccess
+					? {
+							connect: { id: problemId }
+						}
+					: undefined
 			}
 		})
 	}

@@ -103,8 +103,13 @@ export class ProblemController {
 			problemId: +problemId,
 			testProblemDto: submitProblemDto
 		})
-		if (testsResult.success)
-			await this.problemService.updateUserSolvedProblems(+problemId, userId)
+
+		await this.problemService.updateUserProblems(
+			+problemId,
+			userId,
+			testsResult.success
+		)
+
 		return testsResult
 	}
 

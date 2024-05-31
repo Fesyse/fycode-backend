@@ -37,13 +37,52 @@ export class UserService {
 					: false
 			}
 		})
-		return { ...user, password: includePassword ? user.password : undefined }
+
+		return {
+			...user,
+			password: includePassword ? user.password : undefined
+		}
 	}
 
 	async getByEmail(email: string) {
 		return this.prisma.user.findUnique({
 			where: { email }
 		})
+	}
+
+	async getProblemsCount(userId: string) {
+		const problems = await this.prisma.problem.count()
+		const easyProblems = await this.prisma.problem.count({
+			where: { difficulty: "easy" }
+		})
+		const mediumProblems = await this.prisma.problem.count({
+			where: { difficulty: "medium" }
+		})
+		const hardProblems = await this.prisma.problem.count({
+			where: { difficulty: "hard" }
+		})
+
+		const userProblems = await this.prisma.problem.count()
+		const userEasyProblems = await this.prisma.problem.count({
+			where: { difficulty: "easy", users: { some: { id: userId } } }
+		})
+		const userMediumProblems = await this.prisma.problem.count({
+			where: { difficulty: "medium", users: { some: { id: userId } } }
+		})
+		const userHardProblems = await this.prisma.problem.count({
+			where: { difficulty: "hard", users: { some: { id: userId } } }
+		})
+
+		return {
+			problems,
+			easyProblems,
+			mediumProblems,
+			hardProblems,
+			userProblems,
+			userEasyProblems,
+			userMediumProblems,
+			userHardProblems
+		}
 	}
 
 	async create(dto: AuthRegisterDto) {

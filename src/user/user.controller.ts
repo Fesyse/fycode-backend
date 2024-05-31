@@ -48,6 +48,11 @@ export class UserController {
 		})
 	}
 
+	@Get("problems-count/:id")
+	async getProblemsCount(@Param("id") id: string) {
+		return this.userService.getProblemsCount(id)
+	}
+
 	@Auth()
 	@Patch("update-avatar")
 	@UseInterceptors(
