@@ -51,6 +51,7 @@ export class UserService {
 	}
 
 	async getProblemsCount(userId: string) {
+		// TODO: rewrite with prisma.$transaction
 		const problems = await this.prisma.problem.count()
 		const easyProblems = await this.prisma.problem.count({
 			where: { difficulty: "easy" }
