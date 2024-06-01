@@ -51,28 +51,39 @@ export class UserService {
 	}
 
 	async getProblemsCount(userId: string) {
-		// TODO: rewrite with prisma.$transaction
-		const problems = await this.prisma.problem.count()
-		const easyProblems = await this.prisma.problem.count({
-			where: { difficulty: "easy" }
-		})
-		const mediumProblems = await this.prisma.problem.count({
-			where: { difficulty: "medium" }
-		})
-		const hardProblems = await this.prisma.problem.count({
-			where: { difficulty: "hard" }
-		})
+		const users = { some: { id: userId } }
 
-		const userProblems = await this.prisma.problem.count()
-		const userEasyProblems = await this.prisma.problem.count({
-			where: { difficulty: "easy", users: { some: { id: userId } } }
-		})
-		const userMediumProblems = await this.prisma.problem.count({
-			where: { difficulty: "medium", users: { some: { id: userId } } }
-		})
-		const userHardProblems = await this.prisma.problem.count({
-			where: { difficulty: "hard", users: { some: { id: userId } } }
-		})
+		const [
+			problems,
+			easyProblems,
+			mediumProblems,
+			hardProblems,
+			userProblems,
+			userEasyProblems,
+			userMediumProblems,
+			userHardProblems
+		] = await this.prisma.$transaction([
+			this.prisma.problem.count(),
+			this.prisma.problem.count({
+				where: { difficulty: "easy" }
+			}),
+			this.prisma.problem.count({
+				where: { difficulty: "medium" }
+			}),
+			this.prisma.problem.count({
+				where: { difficulty: "hard" }
+			}),
+			this.prisma.problem.count({ where: { users } }),
+			this.prisma.problem.count({
+				where: { difficulty: "easy", users }
+			}),
+			this.prisma.problem.count({
+				where: { difficulty: "medium", users }
+			}),
+			this.prisma.problem.count({
+				where: { difficulty: "hard", users }
+			})
+		])
 
 		return {
 			problems,
