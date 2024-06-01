@@ -42,6 +42,8 @@ export class ProblemService {
 						select: this.PROBLE_GET_FIELDS_SELECT
 					})
 			if (!userId) return { ...problem, isLikedProblem: false }
+			if (!problem)
+				throw new BadRequestException("Problem with given id was not found")
 			const isLikedProblem = !!(await this.prisma.problem.findFirst({
 				where: {
 					usersLiked: {
