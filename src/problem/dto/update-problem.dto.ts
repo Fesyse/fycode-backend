@@ -5,11 +5,13 @@ import {
 	IsObject,
 	ValidateNested,
 	IsArray,
-	IsNumber
+	IsNumber,
+	IsBoolean
 } from "class-validator"
 import { Difficulty } from "@prisma/client"
 import { Type } from "class-transformer"
 import { TestInputTypes } from "@/types"
+import { CustomTest } from "./attempt-problem.dto"
 
 export class OptionalFunctionOptions {
 	@IsOptional()
@@ -38,6 +40,22 @@ export class OptionalFunctionArg {
 	type?: TestInputTypes
 }
 
+export class OptionalTestsOptions {
+	@IsOptional()
+	@IsBoolean()
+	useCustomTests?: boolean
+
+	@IsOptional()
+	@IsArray()
+	@ValidateNested()
+	@Type(() => CustomTest)
+	tests?: CustomTest[]
+
+	@IsOptional()
+	@IsNumber()
+	totalChecks?: number
+}
+
 export class UpdateProblemDto {
 	@IsOptional()
 	@IsString()
@@ -54,7 +72,13 @@ export class UpdateProblemDto {
 	@IsOptional()
 	@IsArray()
 	@IsString({ each: true })
-	tags: string[]
+	tags?: string[]
+
+	@IsOptional()
+	@IsObject()
+	@ValidateNested()
+	@Type(() => OptionalTestsOptions)
+	testsOptions?: OptionalTestsOptions
 
 	@IsOptional()
 	@IsObject()

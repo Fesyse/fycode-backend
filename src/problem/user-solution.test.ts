@@ -53,7 +53,7 @@ const getSolutionsTest = ({
 		return {
 			input: mockArgs,
 			expected,
-			output
+			output: output ?? null
 		}
 	} catch (e) {
 		handleBadCodeRequest(e.message)

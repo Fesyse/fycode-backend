@@ -68,7 +68,7 @@ export class AuthService {
 			httpOnly: true,
 			domain: "localhost",
 			expires: expiresIn,
-			secure: true,
+			secure: process.env.SERVER_MODE === "dev" ? false : true,
 
 			sameSite: "none"
 		})
@@ -78,7 +78,7 @@ export class AuthService {
 			httpOnly: true,
 			domain: "localhost",
 			expires: new Date(0),
-			secure: true,
+			secure: process.env.SERVER_MODE === "dev" ? false : true,
 
 			sameSite: "none"
 		})

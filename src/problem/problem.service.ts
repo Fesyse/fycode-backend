@@ -16,7 +16,7 @@ import { GetPageProblemsDto } from "./dto/get-some-problem.dto"
 @Injectable()
 export class ProblemService {
 	constructor(private prisma: PrismaService) {}
-	private PROBLE_GET_FIELDS_SELECT: Prisma.ProblemFindUniqueArgs["select"] = {
+	private PROBLEM_GET_FIELDS_SELECT: Prisma.ProblemFindUniqueArgs["select"] = {
 		id: true,
 		title: true,
 		description: true,
@@ -39,11 +39,11 @@ export class ProblemService {
 				? await this.getPopular()
 				: await this.prisma.problem.findUnique({
 						where: { id: problemId },
-						select: this.PROBLE_GET_FIELDS_SELECT
+						select: this.PROBLEM_GET_FIELDS_SELECT
 					})
-			if (!userId) return { ...problem, isLikedProblem: false }
 			if (!problem)
 				throw new BadRequestException("Problem with given id was not found")
+			if (!userId) return { ...problem, isLikedProblem: false }
 			const isLikedProblem = !!(await this.prisma.problem.findFirst({
 				where: {
 					usersLiked: {
@@ -65,7 +65,7 @@ export class ProblemService {
 	}
 	async getPopular() {
 		return this.prisma.problem.findFirst({
-			select: this.PROBLE_GET_FIELDS_SELECT,
+			select: this.PROBLEM_GET_FIELDS_SELECT,
 			orderBy: {
 				likes: "desc"
 			}
@@ -163,6 +163,8 @@ export class ProblemService {
 	}
 
 	async update(problemId: number, updateProblemDto: UpdateProblemDto) {
+		const testsOptions =
+			updateProblemDto.testsOptions as unknown as Prisma.JsonObject
 		const functionOptions =
 			updateProblemDto.functionOptions as unknown as Prisma.JsonObject
 		const solution = updateProblemDto.solution
@@ -177,11 +179,13 @@ export class ProblemService {
 		}
 		try {
 			return await this.prisma.problem.update({
+				where: { id: problemId },
 				data: {
 					...updateProblemDto,
+					testsOptions,
 					functionOptions
 				},
-				where: { id: problemId }
+				select: this.PROBLEM_GET_FIELDS_SELECT
 			})
 		} catch {
 			throw new BadRequestException(
