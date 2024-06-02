@@ -51,7 +51,7 @@ export class UserService {
 	}
 
 	async getProblemsCount(userId: string) {
-		const users = { some: { id: userId } }
+		const usersSolved = { none: { id: userId } }
 
 		const [
 			problems,
@@ -73,15 +73,15 @@ export class UserService {
 			this.prisma.problem.count({
 				where: { difficulty: "hard" }
 			}),
-			this.prisma.problem.count({ where: { users } }),
+			this.prisma.problem.count({ where: { usersSolved } }),
 			this.prisma.problem.count({
-				where: { difficulty: "easy", users }
+				where: { difficulty: "easy", usersSolved }
 			}),
 			this.prisma.problem.count({
-				where: { difficulty: "medium", users }
+				where: { difficulty: "medium", usersSolved }
 			}),
 			this.prisma.problem.count({
-				where: { difficulty: "hard", users }
+				where: { difficulty: "hard", usersSolved }
 			})
 		])
 

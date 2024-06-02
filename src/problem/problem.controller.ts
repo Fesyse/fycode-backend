@@ -79,16 +79,26 @@ export class ProblemController {
 		return this.problemService.delete(+problemId, userId)
 	}
 
+	@Auth()
 	@Post("attempt/:id")
 	@UsePipes(new ValidationPipe())
-	attempt(
+	async attempt(
 		@Param("id") problemId: string,
-		@Body() attemptProblemDto: AttemptProblemDto
+		@Body() attemptProblemDto: AttemptProblemDto,
+		@CurrentUser("id") userId: string
 	) {
-		return this.problemService.test({
+		const testsResult = await this.problemService.test({
 			problemId: +problemId,
 			testProblemDto: attemptProblemDto
 		})
+
+		await this.problemService.updateUserProblems({
+			problemId: +problemId,
+			userId,
+			isSuccess: false
+		})
+
+		return testsResult
 	}
 
 	@Auth()
@@ -104,11 +114,11 @@ export class ProblemController {
 			testProblemDto: submitProblemDto
 		})
 
-		await this.problemService.updateUserProblems(
-			+problemId,
+		await this.problemService.updateUserProblems({
+			problemId: +problemId,
 			userId,
-			testsResult.success
-		)
+			isSuccess: testsResult.success
+		})
 
 		return testsResult
 	}

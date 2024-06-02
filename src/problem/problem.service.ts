@@ -194,17 +194,20 @@ export class ProblemService {
 		}
 	}
 
-	async updateUserProblems(
-		problemId: number,
-		userId: string,
+	async updateUserProblems(opts: {
+		problemId: number
+		userId: string
 		isSuccess: boolean
-	) {
+	}) {
 		return this.prisma.user.update({
-			where: { id: userId },
+			where: { id: opts.userId },
 			data: {
-				solvedProblems: isSuccess
+				problems: {
+					connect: { id: opts.problemId }
+				},
+				solvedProblems: opts.isSuccess
 					? {
-							connect: { id: problemId }
+							connect: { id: opts.problemId }
 						}
 					: undefined
 			}
@@ -231,8 +234,7 @@ export class ProblemService {
 
 		let customTests: undefined | CustomTest[] = undefined
 
-		// @ts-expect-error checking if testProblemDto is typeof AttemptProblemDto
-		// checking if data have .tests, if so assign it to customTests value
+		// @ts-expect-error checking if data have .tests, if so assign it to customTests value
 		if (options.testProblemDto.tests) customTests = options.testProblemDto.tests
 		else {
 			const testsOptions = problem.testsOptions as unknown as TestsOptions
