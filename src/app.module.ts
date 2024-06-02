@@ -12,7 +12,7 @@ import { APP_GUARD } from "@nestjs/core"
 		ConfigModule.forRoot(),
 		ThrottlerModule.forRoot([
 			{
-				ttl: 5000,
+				ttl: process.env.SERVER_MODE === "dev" ? 10 : 5000,
 				limit: 10
 			}
 		]),

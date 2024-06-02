@@ -12,7 +12,7 @@ export class UserService {
 
 	async getById(
 		id: string,
-		includePassword: boolean = true,
+		includePassword = true,
 		include?: { problems?: boolean }
 	) {
 		const selectFieldsProblem = {
@@ -37,6 +37,9 @@ export class UserService {
 					: false
 			}
 		})
+
+		if (!user)
+			throw new BadRequestException("User with given id was not found.")
 
 		return {
 			...user,
