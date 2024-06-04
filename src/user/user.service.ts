@@ -31,11 +31,19 @@ export class UserService {
 				: undefined
 		})
 
+		let lastSolvedProblem = undefined
+		if (include?.problems)
+			lastSolvedProblem = await this.prisma.problem.findFirst({
+				where: { usersSolved: { some: { id } } },
+				select: { id: true, title: true }
+			})
+
 		if (!user)
 			throw new BadRequestException("User with given id was not found.")
 
 		return {
 			...user,
+			lastSolvedProblem,
 			password: include?.password ? user.password : undefined
 		}
 	}
