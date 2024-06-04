@@ -30,8 +30,6 @@
 		"@nestjs/throttler": "^5.1.2",
 		"@prisma/client": "^5.14.0",
 		"@types/qs": "^6.9.15",
-		"@uploadthing+shared@6.7.4_@uploadthing+mime-types@0.2.10": "link:C:/Program Files/Git/@uploadthing+shared@6.7.4_@uploadthing+mime-types@0.2.10",
-		"@uploadthing/shared": "^6.7.4",
 		"argon2": "^0.40.1",
 		"class-transformer": "^0.5.1",
 		"class-validator": "^0.14.1",
