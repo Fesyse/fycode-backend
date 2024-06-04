@@ -38,13 +38,14 @@ export class UserController {
 	@Auth()
 	@Get()
 	async get(@CurrentUser("id") id: string) {
-		return this.userService.getById(id, false)
+		return this.userService.getById(id, { password: false })
 	}
 
 	@Get("profile/:id")
 	async getProfile(@Param("id") id: string) {
-		return this.userService.getById(id, false, {
-			problems: true
+		return this.userService.getById(id, {
+			problems: true,
+			password: false
 		})
 	}
 

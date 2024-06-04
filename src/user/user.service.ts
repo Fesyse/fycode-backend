@@ -12,8 +12,7 @@ export class UserService {
 
 	async getById(
 		id: string,
-		includePassword = true,
-		include?: { problems?: boolean }
+		include?: { password?: boolean; problems?: boolean }
 	) {
 		const selectFieldsProblem = {
 			id: true,
@@ -22,20 +21,14 @@ export class UserService {
 		}
 		const user = await this.prisma.user.findUnique({
 			where: { id },
-			include: {
-				createdProblems: include?.problems
-					? { select: selectFieldsProblem }
-					: false,
-				solvedProblems: include?.problems
-					? { select: selectFieldsProblem }
-					: false,
-				dislikedProblems: include?.problems
-					? { select: selectFieldsProblem }
-					: false,
-				likedProblems: include?.problems
-					? { select: selectFieldsProblem }
-					: false
-			}
+			include: include?.problems
+				? {
+						createdProblems: { select: selectFieldsProblem },
+						solvedProblems: { select: selectFieldsProblem },
+						dislikedProblems: { select: selectFieldsProblem },
+						likedProblems: { select: selectFieldsProblem }
+					}
+				: undefined
 		})
 
 		if (!user)
@@ -43,7 +36,7 @@ export class UserService {
 
 		return {
 			...user,
-			password: includePassword ? user.password : undefined
+			password: include?.password ? user.password : undefined
 		}
 	}
 
