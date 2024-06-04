@@ -1,7 +1,9 @@
 import { BadRequestException, Injectable } from "@nestjs/common"
 import { PrismaService } from "@/prisma.service"
-import { testSolution } from "./user-solution.test"
 import { Prisma } from "@prisma/client"
+import { jsmin } from "jsmin"
+import { codeSecurityCheck } from "@/utils"
+import { testSolution } from "./user-solution.test"
 import type {
 	CreateProblemDto,
 	FunctionOptions,
@@ -10,7 +12,6 @@ import type {
 import type { UpdateProblemDto } from "./dto/update-problem.dto"
 import { AttemptProblemDto, CustomTest } from "./dto/attempt-problem.dto"
 import { SubmitProblemDto } from "./dto/submit-problem.dto"
-import { codeSecurityCheck } from "@/utils"
 import { GetPageProblemsDto } from "./dto/get-some-problem.dto"
 
 @Injectable()
@@ -127,6 +128,7 @@ export class ProblemService {
 		} catch (e) {
 			throw new BadRequestException(e)
 		}
+		const solution = jsmin(createProblemDto.solution, 3) as string
 		const problem = await this.prisma.problem.create({
 			data: {
 				...createProblemDto,
@@ -134,6 +136,7 @@ export class ProblemService {
 					createProblemDto.difficulty.toUpperCase(),
 					...createProblemDto.tags
 				],
+				solution,
 				testsOptions,
 				functionOptions,
 				creator: { connect: { id: creatorId } }
@@ -167,7 +170,7 @@ export class ProblemService {
 			updateProblemDto.testsOptions as unknown as Prisma.JsonObject
 		const functionOptions =
 			updateProblemDto.functionOptions as unknown as Prisma.JsonObject
-		const solution = updateProblemDto.solution
+		let solution = updateProblemDto.solution
 			? updateProblemDto.solution.replaceAll("\\n", "\n")
 			: undefined
 		if (solution) {
@@ -176,12 +179,14 @@ export class ProblemService {
 			} catch (e) {
 				throw new BadRequestException(e.message)
 			}
+			solution = jsmin(solution, 3) as string
 		}
 		try {
 			return await this.prisma.problem.update({
 				where: { id: problemId },
 				data: {
 					...updateProblemDto,
+					solution,
 					testsOptions,
 					functionOptions
 				},
