@@ -1,4 +1,10 @@
-import { IsOptional, IsString, IsUrl, MinLength } from "class-validator"
+import {
+	IsEmail,
+	IsOptional,
+	IsString,
+	IsUrl,
+	MinLength
+} from "class-validator"
 
 export class UserUpdateDto {
 	@IsOptional()
@@ -10,6 +16,7 @@ export class UserUpdateDto {
 
 	@IsOptional()
 	@IsString()
+	@IsEmail()
 	email?: string
 
 	@IsOptional()
