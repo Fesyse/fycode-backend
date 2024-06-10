@@ -264,19 +264,24 @@ export class ProblemService {
 			const isUserLiked = !!(await this.prisma.user.findUnique({
 				where: { id: userId, likedProblems: { some: { id: problemId } } }
 			}))
+			const isUserDisliked = !!(await this.prisma.user.findUnique({
+				where: { id: userId, dislikedProblems: { some: { id: problemId } } }
+			}))
 
 			// if user is not liked and he wants to undo it - dont do anything
 			// if user is liked and he wants to undo it - decrement
 			// if user is not liked and he wants to like it - increment
 			// otherwise - dont do anything
 			const increment =
-				!isUserLiked && undo
-					? 0
-					: isUserLiked && undo
-						? -1
-						: !isUserLiked && !undo
-							? 1
-							: 0
+				isUserDisliked && !isUserLiked && !undo
+					? 2
+					: !isUserLiked && undo
+						? 0
+						: isUserLiked && undo
+							? -1
+							: !isUserLiked && !undo
+								? 1
+								: 0
 			const response = await this.prisma.problem.update({
 				where: {
 					id: problemId
@@ -308,18 +313,23 @@ export class ProblemService {
 			const isUserDisliked = !!(await this.prisma.user.findUnique({
 				where: { id: userId, dislikedProblems: { some: { id: problemId } } }
 			}))
+			const isUserLiked = !!(await this.prisma.user.findUnique({
+				where: { id: userId, likedProblems: { some: { id: problemId } } }
+			}))
 			// if user is not disliked and he wants to undo it - dont do anything
 			// if user is disliked and he wants to undo it - increment
 			// if user is not disliked and he wants to dislike it - decrement
 			// otherwise - dont do anything
 			const increment =
-				!isUserDisliked && undo
-					? 0
-					: isUserDisliked && undo
-						? 1
-						: !isUserDisliked && !undo
-							? -1
-							: 0
+				isUserLiked && !isUserDisliked && !undo
+					? -2
+					: !isUserDisliked && undo
+						? 0
+						: isUserDisliked && undo
+							? 1
+							: !isUserDisliked && !undo
+								? -1
+								: 0
 			const response = await this.prisma.problem.update({
 				where: {
 					id: problemId

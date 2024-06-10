@@ -121,7 +121,6 @@ export class UserService {
 		})
 		return { ...user, password: undefined }
 	}
-
 	async updateAvatar(avatar: Express.Multer.File, userId: string) {
 		await this.removeAvatar(userId)
 		const user = await this.prisma.user.update({

@@ -12,14 +12,14 @@ import { APP_GUARD } from "@nestjs/core"
 		ConfigModule.forRoot(),
 		ThrottlerModule.forRoot([
 			{
-				ttl: process.env.SERVER_MODE === "dev" ? 10 : 5000,
+				ttl: process.env.SERVER_MODE === "dev" ? 10 : Infinity,
 				limit: 10
 			}
 		]),
 		MulterModule.register({
 			dest: "./uploads/avatars",
 			limits: {
-				fieldSize: 1000 * 1000 * 4
+				fieldSize: 1000 * 1000 * (process.env.SERVER_MODE === "dev" ? 100 : 4)
 			}
 		}),
 		AuthModule,
