@@ -128,6 +128,22 @@ export class ProblemService {
 		} catch (e) {
 			throw new BadRequestException(e)
 		}
+
+		const functionArguments = createProblemDto.functionOptions.args
+			.map(arg => arg.name)
+			.join(", ")
+		const isSolutionHaveProvidedFunctionName =
+			createProblemDto.solution.includes(
+				`const ${createProblemDto.functionOptions.name} = (${functionArguments}) =>`
+			) ||
+			createProblemDto.solution.includes(
+				`function ${createProblemDto.functionOptions.name}(${functionArguments}) {`
+			)
+		if (!isSolutionHaveProvidedFunctionName) {
+			throw new BadRequestException(
+				`Your solution dont have ${createProblemDto.functionOptions.name} function, please rename function name or function itself.`
+			)
+		}
 		const solution = jsmin(createProblemDto.solution, 3) as string
 		const problem = await this.prisma.problem.create({
 			data: {
