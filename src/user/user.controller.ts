@@ -20,6 +20,7 @@ import { UserUpdateDto } from "./dto/user-update.dto"
 import { diskStorage } from "multer"
 import { extname } from "path"
 import { User } from "@prisma/client"
+import { SkipThrottle } from "@nestjs/throttler"
 
 @Controller("user")
 export class UserController {
@@ -83,6 +84,7 @@ export class UserController {
 		return this.userService.removeAvatar(userId)
 	}
 
+	@SkipThrottle()
 	@Get("avatar/:path")
 	async returnAvatarImage(@Param("path") path: string, @Res() response) {
 		return response.sendFile(path, { root: "./uploads/avatars" })
