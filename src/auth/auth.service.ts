@@ -52,7 +52,8 @@ export class AuthService {
 	}
 	private async validateUser(dto: AuthLoginDto) {
 		const user = await this.userService.getByEmail(dto.email)
-		if (!user) throw new NotFoundException("User not found")
+		if (!user)
+			throw new NotFoundException("User with given email was not found")
 
 		const isValid = await verify(user.password, dto.password)
 		if (!isValid) throw new UnauthorizedException("Invalid password")
