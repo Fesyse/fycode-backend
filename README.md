@@ -10,6 +10,18 @@ make sure you have installed:
 - [Node.js](https://nodejs.org/en/)
 - [pnpm](https://pnpm.io/)
 
+add necessary enviroment variables
+
+```env
+DATABASE_URL="postgresql://username:password@localhost:port/fycode?schema=public"
+JWT_SECRET="random_string"
+
+BASE_URL=""
+CLIENT_URL=""
+
+SERVER_MODE="dev" # change to "prod" in production mode
+```
+
 then install all dependencies
 
 ```bash
