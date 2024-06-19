@@ -34,20 +34,23 @@ export interface TestsResult {
 
 type TestSolution = (options: TestArguments) => TestsResult
 
-const getSolutionsTest = ({
+export const getSolutionsTest = ({
 	solution,
 	userSolution,
 	handleBadCodeRequest,
 	functionOptions,
 	mockArgs
-}: Omit<TestArguments, "customTests" | "testsOptions"> & {
+}: Omit<TestArguments, "customTests" | "testsOptions" | "userSolution"> & {
 	mockArgs: any[]
+	userSolution?: string
 }): Test => {
 	try {
 		const argsAsString = JSON.stringify(mockArgs)
 		const functionCall = `${functionOptions.name}(${argsAsString.substring(1, argsAsString.length - 1)})`
 
 		const expected = eval(`${solution}\n\n${functionCall}`)
+		if (!userSolution)
+			return { input: mockArgs, output: expected, expected: null }
 		const output = eval(`${userSolution}\n\n${functionCall}`)
 
 		return {
@@ -56,7 +59,11 @@ const getSolutionsTest = ({
 			output: output ?? null
 		}
 	} catch (e) {
-		handleBadCodeRequest(e.message)
+		if (!userSolution)
+			handleBadCodeRequest(
+				"Your solution does not pass tests. <br /> Try checking if your function name is correct."
+			)
+		else handleBadCodeRequest(e.message)
 	}
 }
 
@@ -69,6 +76,7 @@ export const testSolution: TestSolution = ({
 	solution
 }) => {
 	const tests: Test[] = []
+
 	if (!customTests) {
 		for (let i = 0; i < testsOptions.totalChecks; i++) {
 			const mockArgs = []

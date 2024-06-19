@@ -2,8 +2,8 @@ import { BadRequestException, Injectable } from "@nestjs/common"
 import { PrismaService } from "@/prisma.service"
 import { Prisma } from "@prisma/client"
 import { jsmin } from "jsmin"
-import { codeSecurityCheck } from "@/utils"
-import { testSolution } from "./user-solution.test"
+import { codeSecurityCheck, getRandomArg } from "@/utils"
+import { getSolutionsTest, testSolution } from "./user-solution.test"
 import type {
 	CreateProblemDto,
 	FunctionOptions,
@@ -123,27 +123,20 @@ export class ProblemService {
 			createProblemDto.testsOptions as unknown as Prisma.JsonObject
 		const functionOptions =
 			createProblemDto.functionOptions as unknown as Prisma.JsonObject
-		try {
-			eval(createProblemDto.solution)
-		} catch (e) {
-			throw new BadRequestException(e)
-		}
 
-		const functionArguments = createProblemDto.functionOptions.args
-			.map(arg => arg.name)
-			.join(", ")
-		const isSolutionHaveProvidedFunctionName =
-			createProblemDto.solution.includes(
-				`const ${createProblemDto.functionOptions.name} = (${functionArguments}) =>`
-			) ||
-			createProblemDto.solution.includes(
-				`function ${createProblemDto.functionOptions.name}(${functionArguments}) {`
-			)
-		if (!isSolutionHaveProvidedFunctionName) {
-			throw new BadRequestException(
-				`Your solution dont have ${createProblemDto.functionOptions.name} function, please rename function name or function itself.`
-			)
-		}
+		const mockArgs = createProblemDto.testsOptions.useCustomTests
+			? createProblemDto.testsOptions.tests[0].input
+			: createProblemDto.functionOptions.args.map(arg => getRandomArg(arg.type))
+
+		getSolutionsTest({
+			functionOptions: createProblemDto.functionOptions,
+			handleBadCodeRequest: (message: string) => {
+				throw new BadRequestException(message)
+			},
+			mockArgs,
+			solution: createProblemDto.solution
+		})
+
 		const solution = jsmin(createProblemDto.solution, 3) as string
 		const problem = await this.prisma.problem.create({
 			data: {
