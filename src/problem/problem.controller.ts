@@ -17,7 +17,11 @@ import { Auth } from "@/auth/decorators/auth.decorator"
 import { CurrentUser } from "@/auth/decorators/user.decorator"
 import { AttemptProblemDto } from "./dto/attempt-problem.dto"
 import { SubmitProblemDto } from "./dto/submit-problem.dto"
-import { GetPageProblemsDto } from "./dto/get-some-problem.dto"
+import { GetPageProblemsDto } from "./dto/get-page-problem.dto"
+import { ApiBearerAuth, ApiTags } from "@nestjs/swagger"
+
+@ApiBearerAuth()
+@ApiTags("problem")
 @Controller("problem")
 export class ProblemController {
 	constructor(private readonly problemService: ProblemService) {}

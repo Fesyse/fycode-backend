@@ -12,7 +12,7 @@ import type {
 import type { UpdateProblemDto } from "./dto/update-problem.dto"
 import { AttemptProblemDto, CustomTest } from "./dto/attempt-problem.dto"
 import { SubmitProblemDto } from "./dto/submit-problem.dto"
-import { GetPageProblemsDto } from "./dto/get-some-problem.dto"
+import { GetPageProblemsDto } from "./dto/get-page-problem.dto"
 
 @Injectable()
 export class ProblemService {

@@ -21,7 +21,10 @@ import { diskStorage } from "multer"
 import { extname } from "path"
 import { User } from "@prisma/client"
 import { SkipThrottle } from "@nestjs/throttler"
+import { ApiBearerAuth, ApiTags } from "@nestjs/swagger"
 
+@ApiBearerAuth()
+@ApiTags("user")
 @Controller("user")
 export class UserController {
 	constructor(private readonly userService: UserService) {}
