@@ -58,5 +58,4 @@ report.[0-9]*.[0-9]*.[0-9]*.[0-9]*.json
 # File uploads
 uploads/
 
-vercel.json
 .vercel
