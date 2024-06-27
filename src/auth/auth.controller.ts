@@ -1,10 +1,12 @@
 import {
 	Body,
 	Controller,
+	Get,
 	Post,
 	Req,
 	Res,
 	UnauthorizedException,
+	UseGuards,
 	UsePipes,
 	ValidationPipe
 } from "@nestjs/common"
@@ -13,6 +15,7 @@ import { AuthLoginDto } from "./dto/auth-login.dto"
 import { AuthRegisterDto } from "./dto/auth-register.dto"
 import { Request, Response } from "express"
 import { ApiBearerAuth, ApiTags } from "@nestjs/swagger"
+import { AuthGuard } from "@nestjs/passport"
 
 @ApiBearerAuth()
 @ApiTags("auth")
@@ -70,5 +73,15 @@ export class AuthController {
 		this.authService.addRefreshTokenToResponse(res, refreshToken)
 
 		return response
+	}
+
+	@Get("google")
+	@UseGuards(AuthGuard("google"))
+	async googleAuth(@Req() req: Express.Request) {}
+
+	@Get("google/redirect")
+	@UseGuards(AuthGuard("google"))
+	googleAuthRedirect(@Req() req: Express.Request) {
+		return this.authService.googleLogin(req)
 	}
 }

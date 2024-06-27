@@ -1,3 +1,4 @@
+import { join } from "path"
 import { Module } from "@nestjs/common"
 import { ConfigModule } from "@nestjs/config"
 import { MulterModule } from "@nestjs/platform-express"
@@ -6,10 +7,16 @@ import { UserModule } from "@/user/user.module"
 import { AuthModule } from "@/auth/auth.module"
 import { ProblemModule } from "@/problem/problem.module"
 import { APP_GUARD } from "@nestjs/core"
+import { ServeStaticModule } from "@nestjs/serve-static"
+import { AppController } from "./app.controller"
 
 @Module({
 	imports: [
 		ConfigModule.forRoot(),
+		// ServeStaticModule.forRoot({
+		// 	rootPath: join(__dirname, "../", "client", ".next"),
+		// 	exclude: ["api/*"]
+		// }),
 		ThrottlerModule.forRoot([
 			{
 				ttl: process.env.SERVER_MODE === "dev" ? 1 : 7500,
@@ -26,6 +33,7 @@ import { APP_GUARD } from "@nestjs/core"
 		UserModule,
 		ProblemModule
 	],
+	controllers: [AppController],
 	providers: [
 		{
 			provide: APP_GUARD,

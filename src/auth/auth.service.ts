@@ -101,4 +101,10 @@ export class AuthService {
 			...tokens
 		}
 	}
+
+	googleLogin(req: Express.Request) {
+		if (!req.user) throw new UnauthorizedException("No user from google")
+		console.log(req.user)
+		return req.user
+	}
 }
